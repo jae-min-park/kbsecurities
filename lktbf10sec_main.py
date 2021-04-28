@@ -25,7 +25,7 @@ cursor = test_db.cursor(pymysql.cursors.DictCursor)
 일단 기본 ohlc sql통해 날자값 안으로 df받아오기
 """
 dfm = dataManager.DataFrameManager(cursor)
-dt_start = pd.Timestamp(year=2018, month = 3, day = 2)
+dt_start = pd.Timestamp(year=2019, month = 3, day = 2)
 dt_end = pd.Timestamp(year=2021, month = 4, day = 6)
 dfm.setDfData(dt_start, dt_end)
 df = dfm.df

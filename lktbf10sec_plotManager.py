@@ -10,7 +10,30 @@ import matplotlib.pyplot as plt
 """
 ticks를 10 곱하면 초단위가 나온다.
 """
-ticks = 120
+ticks = 60
+
+def getTicks(dfmkt, dt, num_ticks_beforehand, num_ticks_afterward):
+    df_day = dfmkt[dfmkt.date == dt.date()]
+    dti_day = df_day.index
+    
+    start_index_number = max(0, dti_day.get_loc(dt) - num_ticks_beforehand/2)
+    ticks_start_at = dti_day[start_index_number+1]
+    
+    reference_price = df_day.loc[dt]['close']
+        
+    ticks_arr_before = -reference_price + np.array(df_day.loc[ticks_start_at:dt]['close'])
+    
+    if start_index_number == 0:
+        start_value = df_day.iloc[0]['open'] - reference_price #그날의 시가
+        ticks_arr_before = np.append([start_value]*(num_ticks_beforehand/2 - len(ticks_arr_before)), ticks_arr_before)
+    
+    
+    end_index_number = min(len(dti_day)-1, dti_day.get_loc(dt) + num_ticks_afterward/2)
+    ticks_end_at = dti_day[end_index_number-1]
+    
+    ticks_arr_after = -reference_price + np.array(df_day.loc[dt : ticks_end_at]['close'])
+        
+    return np.append(ticks_arr_before, ticks_arr_after)
 
 
 def getTicksAfterward(dfmkt, dt, num_ticks_afterward):

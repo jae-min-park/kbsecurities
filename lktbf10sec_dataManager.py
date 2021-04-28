@@ -75,7 +75,7 @@ class DataFrameManager:
     date_start부터 date_end까지 데이터를 받는 sql을 수행
     """
     def setDfData(self, date_start, date_end) :
-        sql = "select * from `lktbf` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
+        sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
         self.getSQLData(sql)
         self.df.index = pd.to_datetime(self.df.date.astype(str) + ' ' + self.df.time.astype(str).apply(lambda x: x[7:]))
         
