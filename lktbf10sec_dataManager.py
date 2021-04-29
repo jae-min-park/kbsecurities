@@ -262,7 +262,7 @@ class DataFrameManager:
             _lo = str(df_excel.iloc[i,5])
             _close = str(df_excel.iloc[i,6])
             vol = str(df_excel.iloc[i,7]) 
-            sql = "insert into `lktbf` (code, date, time, open, hi, lo, close, vol) values ('" + code+ "','" + date + "','" + time + "','" + _open + "','" + _hi + "','" + _lo + "','" + _close + "','"+ vol +"'" + ');'
+            sql = "insert into `lktbf10sec` (code, date, time, open, hi, lo, close, vol) values ('" + code+ "','" + date + "','" + time + "','" + _open + "','" + _hi + "','" + _lo + "','" + _close + "','"+ vol +"'" + ');'
             cursor.execute(sql)
             
         
