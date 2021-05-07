@@ -97,14 +97,20 @@ def getTicksBeforehand(dfmkt, dt, num_ticks_beforehand):
 """
 df 와 전략이 발생하는 날자리스트를 입력받아 plotting 해주는 함수
 """
-def plot(dfmkt, plot_list) :
+def plot(dfmkt, plot_list, method) :
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     
     for dt in plot_list:
         label = str(dt)
         # ax.plot(getTicksBeforehand(dfmkt, dt, 60), label = label)
-        plt.plot(getTicksAfterward(dfmkt, dt, ticks), label = label)
+        if method == 'before':
+            plt.plot(getTicksBeforehand(dfmkt, dt, ticks), label = label)
+        elif method== 'after':
+            plt.plot(getTicksAfterward(dfmkt, dt, ticks), label = label)
+        else :
+            plt.plot(getTicks(dfmkt, dt, ticks, ticks), label = label)
+        
         plt.pause(3.0)
     
     ax.legend(loc='upper left', ncol=2, bbox_to_anchor=(0,-0.1))
