@@ -4,27 +4,28 @@ import pymysql
 from matplotlib import pyplot as plt
 import numpy as np
 import math
+from utils.util import *
 
-test_db = pymysql.connect(user='admin',
-                          passwd='se21121',
-                          # host = '211.232.156.57',
-                          host='127.0.0.1',
-                          db='testschema',
-                          charset='utf8')
+# test_db = pymysql.connect(user='admin',
+#                           passwd='se21121',
+#                           # host = '211.232.156.57',
+#                           host='127.0.0.1',
+#                           db='testschema',
+#                           charset='utf8')
 
-cursor = test_db.cursor(pymysql.cursors.DictCursor)
+# cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
 # df_sample = pd.read_excel('reshape_real_1d.xlsx')
 
 
-def setDfData(date_start, date_end) :
-    sql = "SELECT * FROM `lktb200vol` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-    # sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    return pd.DataFrame(result)
+# def setDfData(date_start, date_end) :
+#     sql = "SELECT * FROM `lktb200vol` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
+#     # sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
+#     cursor.execute(sql)
+#     result = cursor.fetchall()
+#     return pd.DataFrame(result)
 
-df_sample = setDfData('2019-04-12','2019-04-30')
+df_sample = setDfData('2019-04-12','2019-04-30', '`lktb200vol`')
 
 
 """
@@ -270,6 +271,7 @@ def strategy(df_sample,mode) :
         
         
         preday_close = df_today.iloc[-1]['price']
+        
         # print(df_today)
         longProfit = np.array(long_profit)
         shortProfit = np.array(short_profit)
