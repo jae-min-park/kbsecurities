@@ -1,31 +1,10 @@
 import pandas as pd
-from tqdm import tqdm
-import pymysql
 from matplotlib import pyplot as plt
 import numpy as np
 import math
 from utils.util import *
 
-# test_db = pymysql.connect(user='admin',
-#                           passwd='se21121',
-#                           # host = '211.232.156.57',
-#                           host='127.0.0.1',
-#                           db='testschema',
-#                           charset='utf8')
-
-# cursor = test_db.cursor(pymysql.cursors.DictCursor)
-
-# df_sample = pd.read_excel('reshape_real_1d.xlsx')
-
-
-# def setDfData(date_start, date_end) :
-#     sql = "SELECT * FROM `lktb200vol` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-#     # sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-#     cursor.execute(sql)
-#     result = cursor.fetchall()
-#     return pd.DataFrame(result)
-
-df_sample = setDfData('2019-04-12','2019-04-30', '`lktb200vol`')
+df_sample = setDfData('2019-04-12','2019-04-12', '`lktb200vol`')
 
 
 """
@@ -67,15 +46,16 @@ def shortTest(short, vwap, opn, a, v, v2):
 mode : "preday_close", "preday_max", "open"
 """
 def strategy(df_sample,mode) :
-
     """
     dt는 각 날자이고, df_today는 날자를 만족시키는 dataframe이다.
     """
     pt = 0.1
     lc = -0.05
-    
+    # vol_term = 35
     preday_close = 0
     preday_max = 0
+    
+    
     for dt in li :
         df_today = df_sample[df_sample['date'] == dt]
     
@@ -95,15 +75,10 @@ def strategy(df_sample,mode) :
             loi = df_today.iloc[0]['open']
     
         preday_max = 1
+        vol_start = 0
+        vol_end = 0
         
         for dti_pre, dti_mid, dti_post in zip(dti, dti[1:], dti[2:]):
-            # if mode == 'preday_close' :
-            #     loi = df_today.loc[dti_mid,'open'] if (preday_close == 0) else preday_close # line of interest : loi
-            # elif mode =='preday_max' :
-            #     loi = df_today.loc[dti_mid,'open'] if (preday_max == 0) else preday_max # line of interest : loi
-            # elif mode == 'open' :
-            #     loi = df_today.loc[dti_mid,'open']
-            
             vwap = df_today.loc[dti_mid,'vwap']
             close = df_today.loc[dti_mid,'price']
             high = df_today.loc[dti_mid,'high']
@@ -121,41 +96,37 @@ def strategy(df_sample,mode) :
             #     df_today.at[i,'rbPattern'] = True
             #     df_today.at[i,'rbPattern2'] = 'Y'
     
-            # v = df_today.at[dti_post,'v'] = df_today.at[dti_post,'vwap'] - df_today.at[dti_mid, 'vwap']
             v = df_today.at[dti_mid,'v'] = close - vwap
             pre_v = df_today.at[dti_pre,'v'] = df_today.at[dti_pre, 'price'] - df_today.at[dti_pre,'vwap'] 
-            # v2 = df_today.at[dti_post,'v2'] = df_today.at[dti_post,'vwap'] - df_today.at[dti_pre, 'vwap']
             v2 = df_today.at[dti_mid, 'price'] - df_today.at[dti_pre,'vwap']
             a = df_today.at[dti_mid,'a'] = v - pre_v
-            # a = df_today.at[dti_post,'a'] = df_today.at[dti_post,'v'] - df_today.at[dti_mid,'v']
             
             # 오전에만 돌릴까 말까 고민
             # if df_today.at[dti_mid,'time'] <= pd.Timedelta("12:00:00") :
                 
             # 롱진입, 숏진입 초입부
-            if not short and longTest(long, vwap, loi,a, v, v2):
+            if not short and longTest(long, vwap, loi, a, v, v2):
                 long = True
                 long_index=dti_post
-                long_price = upp(df_today.loc[dti_post,'price'])
+                long_price = df_today.loc[dti_post,'price']
             elif not long and shortTest(short, vwap, loi, a, v, v2) :
                 short = True
                 short_index = dti_post
-                short_price = flr(df_today.loc[dti_post,'price'])
+                short_price = df_today.loc[dti_post,'price']
             # 롱 익절
-            if long and df_today.loc[dti_mid,'vwap'] > long_price + pt:
+            if long and upp(df_today.loc[dti_mid,'vwap']) > long_price + pt:
                 win = pt
-                # win = round(df_today.loc[dti_post,'price'] - long_price,2)
-                # print(str(df_today.loc[dti_mid,'date'])+" win:"+str(win))
-                lineDrawer("red",long_index,long_price,dti_post,df_today.loc[dti_post,'price'])
+                lineDrawer("red",long_index,long_price,dti_post,df_today.loc[dti_post,'vwap'])
                 
                 long_win+=1
                 long_profit.append(win)
                 long=False
             # 롱 손절후 숏으로 전환
-            elif long and df_today.loc[dti_mid,'vwap'] <= long_price +lc or shortTest(short, vwap, loi,a, v, v2):
-                if df_today.loc[dti_mid,'price'] > long_price :
-                    win = df_today.loc[dti_post,'price'] - long_price
-                    lineDrawer("red",long_index,long_price,dti_post,df_today.loc[dti_post,'price'])
+            elif long and upp(df_today.loc[dti_mid,'vwap']) <= long_price +lc or shortTest(short, vwap, loi,a, v, v2):
+            # elif long and upp(df_today.loc[dti_mid,'vwap']) <= long_price +lc or shortTest(short, vwap, loi,a, v, v2) and dti_mid - short_index >= vol_term:
+                if upp(df_today.loc[dti_mid,'price']) > long_price :
+                    win = upp(df_today.loc[dti_post,'vwap']) - long_price
+                    lineDrawer("red",long_index,long_price,dti_post, upp(df_today.loc[dti_post,'vwap']))
                     
                     long_win+=1
                     long_profit.append(win)
@@ -164,32 +135,28 @@ def strategy(df_sample,mode) :
                     lineDrawer("blue",long_index,long_price,dti_post,flr(df_today.loc[dti_post,'vwap']))
                 
                     lose = lc
-                    # lose = round(df_today.loc[dti_post,'price']-long_price,2)
-                    # print(str(df_today.loc[dti_post,'time'])+" lose:"+str(lose) +" " + str(long_index) +" " + str(dti_post)+" " + str(df_today.loc[dti_mid,'price']) +" "+ str(long_price+lc))
                     long = False
                     long_profit.append(lose)
                     long_lose+=1
+                # if shortTest(short, vwap, loi,a, v, v2) and dti_mid - short_index >= vol_term :
                 if shortTest(short, vwap, loi,a, v, v2) :
                     short = True
                     short_index = dti_post
-                    short_price = flr(df_today.loc[dti_post,'price'])
-                # short = True
-                # short_index = dti_post
-                # short_price = df_today.loc[dti_post,'price']
+                    short_price = df_today.loc[dti_post,'price']
             # 숏 익절 
-            elif short and df_today.loc[dti_mid,'vwap'] <= short_price - pt:
+            elif short and flr(df_today.loc[dti_mid,'vwap']) <= short_price - pt:
                 win = pt
-                # win = round(short_price - df_today.loc[dti_post,'price'],2)
-                # print(str(df_today.loc[dti_mid,'date'])+" win:"+str(win,2))
                 lineDrawer("orange",short_index,short_price,dti_post,df_today.loc[dti_post,'price'])
                 short_profit.append(win)
                 short_win+=1
                 short=False
             # 숏 손절후 롱으로 전환
-            elif short and df_today.loc[dti_mid,'vwap'] >= short_price -lc or longTest(long, vwap, loi,a, v, v2):
+            elif short and flr(df_today.loc[dti_mid,'vwap']) >= short_price -lc or longTest(long, vwap, loi,a, v, v2):
+            # elif short and flr(df_today.loc[dti_mid,'vwap']) >= short_price -lc or longTest(long, vwap, loi,a, v, v2) and dti_mid - long_index >= vol_term:
                 if short_price > df_today.loc[dti_mid,'price'] :
-                    win = short_price - df_today.loc[dti_mid,'price']
-                    lineDrawer("orange",short_index,short_price,dti_post,df_today.loc[dti_post,'price'])
+                    
+                    win = short_price - flr(df_today.loc[dti_mid,'vwap'])
+                    lineDrawer("orange",short_index,short_price,dti_post,flr(df_today.loc[dti_post,'vwap']))
                     
                     short_win+=1
                     short_profit.append(win)
@@ -197,33 +164,27 @@ def strategy(df_sample,mode) :
                 else :
                     lineDrawer("purple",short_index,short_price,dti_post,upp(df_today.loc[dti_post,'vwap']))
                     lose = lc
-                    # lose = round(short_price - df_today.loc[dti_post,'price'],2)
-                    # print(str(df_today.loc[dti_post,'time'])+" lose:"+str(lose))
                     short = False
                     short_lose+=1
                     short_profit.append(lose)
                 if longTest(long, vwap, loi,a, v, v2) :
+                # if longTest(long, vwap, loi,a, v, v2) and dti_mid - long_index >= vol_term:
                     long = True
                     long_index = dti_post
-                    long_price = df_today.loc[dti_post,'vwap']
-                    # long = True
-                    # long_index = dti_post
-                    # long_price = df_today.loc[dti_post,'price']
+                    long_price = df_today.loc[dti_post,'price']
             # 마지막 인덱스에서 처분    
             elif long and dti_post == dti[-1]:
                 last = round(df_today.loc[dti_post,'price'] - long_price,2)
-                # (str(df_today.loc[dti_post,'date'])+" last:"+str(last))
                 if last > 0 :
                     lineDrawer("red",long_index,long_price,dti_post,df_today.loc[dti_post,'price'])
                     long_win += 1 
                 else:
-                    lineDrawer("blue",long_index,short_price,dti_post,df_today.loc[dti_post,'price'])
+                    lineDrawer("blue",long_index,long_price,dti_post,df_today.loc[dti_post,'price'])
                     long_lose += 1  
                 long_profit.append(last)
                 long = False
             elif short and dti_post == dti[-1]:
                 last = round(short_price - df_today.loc[dti_post,'price'],2)
-                # print(str(df_today.loc[dti_post,'date'])+" last:"+str(last))
                 if last > 0 :
                     lineDrawer("orange",short_index,short_price,dti_post,df_today.loc[dti_post,'price'])
                     short_win +=1  
@@ -233,37 +194,6 @@ def strategy(df_sample,mode) :
                 short_profit.append(last)
                 short = False
             
-            # near preday_close, today_open 인지 체크
-            # if not short and round(abs(close - opn),2) <= 0.01 and a<0 and v < 0 and v2<0:
-            #     # plt.axvspan(dti_mid, dti_post, facecolor="red")
-            #     short = True
-            #     short_index=dti_mid
-            #     short_price = df_today.loc[dti_post,'price']
-            # # if short and df_today.loc[dti_post,'a'] > 0.01 :
-            # if short and df_today.loc[dti_mid,'price'] < short_price - 0.04:
-            #     win = short_price - df_today.loc[dti_post,'price']
-            #     print(str(df_today.loc[dti_mid,'date'])+" win:"+str(round(win,2)))
-            #     plt.axvspan(short_index, dti_post, facecolor="gray")
-            #     # plt.fill_between(dti[short_index:dti_post+1],df_today['price'][short_index:dti_post+1], alpha=0.5)
-            #     short=False
-            # elif short and v >0 and v2>0 and a>0:
-            #     plt.axvspan(short_index, dti_mid, facecolor="red")
-            #     lose = df_today.loc[dti_post,'price'] - short_price
-            #     print(str(df_today.loc[dti_post,'date'])+" lose:"+str(round(lose,2)))
-            #     short = False
-            # elif short and df_today.loc[dti_mid,'price'] > short_price + 0.03:
-            #     plt.axvspan(short_index, dti_mid, facecolor="red")
-            #     lose = df_today.loc[dti_post,'price'] - short_price
-            #     print(str(df_today.loc[dti_post,'date'])+" lose:"+str(round(lose,2)))
-            #     short = False
-            # elif short and dti_post == dti[-1]:
-            #     plt.axvspan(short_index, dti_post, facecolor="red")
-            #     lose = df_today.loc[dti_post,'price'] - short_price
-            #     print(str(df_today.loc[dti_post,'date'])+" lose:"+str(round(lose,2)))
-            #     short = False
-            # if round(abs(close - opn), 2) <= 0.01 and a<0 and v < 0:
-            #     df_today.at[dti_post,'todayOpn'] = opn
-            #     plt.axvspan(dti_mid, dti_post, facecolor="blue")
                 
             # GRAVE STONE 이면 패턴 체크
             if round(abs(close - loi),2) <= 0.01 and round(min(loi,close)-low,2) <= 0.01 and round(high-max(loi,close),2) >= 0.04:
@@ -272,7 +202,6 @@ def strategy(df_sample,mode) :
         
         preday_close = df_today.iloc[-1]['price']
         
-        # print(df_today)
         longProfit = np.array(long_profit)
         shortProfit = np.array(short_profit)
         print("long:"+str(long_profit)+ str(sum(long_profit))+ ", " + str(len(long_profit))+ " " + str(np.average(longProfit)))
@@ -284,14 +213,11 @@ def strategy(df_sample,mode) :
         plt.plot(dti,df_today['price'])
         plt.show()
    
-
-
 """
 엑셀에 요약본 작성하려고 만드는 dataframe
 """
 tag_list = "long_sum", "long_len", "long_avg", "short_sum", "short_len", "short_avg", "total", "long_win", "long_lose", "short_win","short_lose"
 df_tag = pd.DataFrame(columns=tag_list)
-
 
 """
 li는 setDfData의 param으로 준 날자들의 집합을 오름차순으로 정렬해 놓은 값이다.
@@ -303,22 +229,9 @@ li = sorted(list(set(df_sample['date'])))
 """
 writer = pd.ExcelWriter('precise.xlsx', engine='xlsxwriter')
 
-"""
-dt는 각 날자이고, df_today는 날자를 만족시키는 dataframe이다.
-"""
-pt = 0.1
-lc = -0.05
 strategy(df_sample, 'preday_close')
 strategy(df_sample, 'preday_max')
 strategy(df_sample, 'open')
-
-# for dt in li :
-#     df_today = df_sample[df_sample['date'] == dt]
-#     # df_today = df_today[df_today['time']<=df_today.iloc[0]['time']+pd.Timedelta("00:15:00")]
-#     param strategy(df_today,'preday_close', param)
-#     plt.show()
-#     # df_today.to_excel(writer, sheet_name=str(dt))
-    
     
 writer.save()
 
