@@ -41,7 +41,7 @@ def getDailyOHLC():
     """
     returns : 일봉 dataframe
     """
-    df = setDfData('2000-10-01','2099-04-30', '`lktb1day`')
+    df = setDfData('2000-10-01','2099-04-30')
     df.index = df.date
     df = df.drop(columns='date')
     
