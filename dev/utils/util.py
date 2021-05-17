@@ -21,12 +21,17 @@ cursor = test_db.cursor(pymysql.cursors.DictCursor)
 # df_sample = pd.read_excel('reshape_real_1d.xlsx')
 
 
-def setDfData(date_start, date_end, table) :
+def setDfData(date_start, date_end, table, datetime_col="N") :
     sql = "SELECT * FROM "+ table +"where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
     # sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
     cursor.execute(sql)
     result = cursor.fetchall()
-    return pd.DataFrame(result)
+    
+    df = pd.DataFrame(result)
+    if datetime_col == "Y":
+        df['datetime'] = pd.to_datetime(df.date.astype(str) + ' ' + df.time.astype(str).apply(lambda x: x[7:]))
+        
+    return df
 
 def date_offset(ld, ref_day, n=int):
     """
