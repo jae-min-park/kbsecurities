@@ -5,7 +5,7 @@ Created on Tue Apr 20 12:06:19 2021
 @author: infomax
 """
 
-import lktbftick_dataManager as dm
+from managers.lktbftick_dataManager import *
 
 import math
 import pymysql
@@ -24,7 +24,7 @@ cursor = test_db.cursor(pymysql.cursors.DictCursor)
 # """
 # 일단 기본 ohlc sql통해 날자값 안으로 df받아오기
 # """
-dfm = dm.DataFrameManager(cursor)
+dfm = DataFrameManager(cursor)
 dt_start = pd.Timestamp(year=2020, month = 11, day = 1)
 dt_end = pd.Timestamp(year=2020, month = 11, day = 30)
 dfm.setDfData(dt_start, dt_end)
