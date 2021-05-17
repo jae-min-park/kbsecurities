@@ -51,7 +51,7 @@ def rangeTest(vwap, loi):
     else:
         return "out_of_range"
 
-def tradeLoi(date, loi_option='open', vol_option='lktb200vol'):
+def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     """
     Parameters
     ----------
@@ -67,8 +67,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb200vol'):
     {'df': df_result,
      'loi_option': loi_option}
         df_result
-            index : int index
-            time : datetime
+            trade_time : pd.Timestamp
             direction : +1 or -1
             price : 매매가 일어난 가격
         loi_option
@@ -96,8 +95,10 @@ def tradeLoi(date, loi_option='open', vol_option='lktb200vol'):
     dti = df.index
     #결과를 담는 df 정의
     df_result = pd.DataFrame(index = dti, 
-                             columns=['signal_time', 
+                             columns=['loi',
+                                      'signal_time', 
                                       'direction', 
+                                      'signal_vwap', 
                                       'trade_time', 
                                       'price'])
     
@@ -133,10 +134,12 @@ def tradeLoi(date, loi_option='open', vol_option='lktb200vol'):
         elif range_status_prev == "within_range" and range_status == "out_of_range":
             range_status_prev = range_status
             
+            df_result.at[dti_now, 'loi'] = loi
             #timedelta --> datetime.time형식으로 변환
             df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(df.loc[dti_now,'time'])[7:])
             #1은 LOI 레인지 상향돌파, vice versa
             df_result.at[dti_now, 'direction'] = 1 if vwap > loi else -1
+            df_result.at[dti_now, 'signal_vwap'] = vwap
             df_result.at[dti_now, 'price'] = 'TBD'
     
     """vwap index기준 test loop종료"""
@@ -150,7 +153,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb200vol'):
             
 date = datetime.date(2019,4,12)
 
-df = tradeLoi(date)['df']
+df = tradeLoi(date, loi_option='open')['df']
         
             
             
