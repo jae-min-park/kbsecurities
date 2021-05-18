@@ -152,13 +152,10 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
             df_result.at[dti_now, 'local_index'] = dti_now
         
     """vwap index기준 test loop종료"""
+    
     df_result.dropna(inplace=True)
-    # df_result.index = df_result.trade_time
-    df_result.drop(columns='trade_time', inplace=True)
     
-    
-    
-    
+       
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(1,1,1)
     for result_i in df_result.index:
@@ -170,6 +167,9 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
         
     plt.plot(dti, df['price'])
     plt.show()
+    
+    # df_result.drop(columns='trade_time', inplace=True)
+    df_result.index = df_result.trade_time
     
     return {'df' : df_result, 'loi_option': loi_option}
 
