@@ -46,7 +46,7 @@ def upp(item) :
 #%%
 
 def rangeTest(vwap, loi):
-    if 100*abs(vwap - loi) <= 1.0:
+    if 100*abs(vwap - loi) <= 0.7:
         return "within_range"
     else:
         return "out_of_range"
@@ -134,18 +134,17 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
         #LOI 레인지 안에서 밖으로 나가는 경우 --> signal 발생
         elif range_status_prev == "within_range" and range_status == "out_of_range":
             range_status_prev = range_status
+            
+            #1은 LOI 레인지 상향돌파, vice versa
             signal_now = 1 if vwap > loi else -1
             
-            if signal_before == signal_now :
-                pass
-            else:
+            if signal_before != signal_now :
                 df_result.at[dti_now, 'direction'] = signal_now
                 signal_before = signal_now
                 
                 df_result.at[dti_now, 'loi'] = loi
                 #timedelta --> datetime.time형식으로 변환
                 df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(df.loc[dti_now,'time'])[7:])
-                #1은 LOI 레인지 상향돌파, vice versa
                 
             df_result.at[dti_now, 'signal_vwap'] = vwap
             df_result.at[dti_now, 'price'] = 'TBD'
@@ -156,36 +155,38 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     df_result.dropna(inplace=True)
     
        
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(1,1,1)
-    for result_i in df_result.index:
-        marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
-        color = "tab:red" if marker == "^" else "b"
-        x = result_i
-        y = df_result.loc[result_i]['price']
-        ax.scatter(x, y, color=color, marker=marker, )
+    # fig = plt.figure(figsize=(8,8))
+    # ax = fig.add_subplot(1,1,1)
+    # for result_i in df_result.index:
+    #     marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
+    #     color = "tab:red" if marker == "^" else "b"
+    #     x = result_i
+    #     y = df_result.loc[result_i]['price']
+    #     ax.scatter(x, y, color=color, marker=marker, )
         
-    plt.plot(dti, df['price'])
-    plt.show()
+    # plt.plot(dti, df['price'])
+    # plt.show()
+    
+    df_result.index = df_result.trade_time
+    df_result.index.name = 'index'
     
     # df_result.drop(columns='trade_time', inplace=True)
-    df_result.index = df_result.trade_time
     
     return {'df' : df_result, 'loi_option': loi_option}
 
 
             
             
-date = datetime.date(2019,4,12)
+# date = datetime.date(2019,4,12)
 
-df = tradeLoi(date, loi_option='yday_hi')['df']
-print(df)        
-df = tradeLoi(date, loi_option='yday_lo')['df']
-print(df)        
-df = tradeLoi(date, loi_option='yday_close')['df']
-print(df)        
-df = tradeLoi(date, loi_option='open')['df']
-print(df)        
+# df = tradeLoi(date, loi_option='yday_hi')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='yday_lo')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='yday_close')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='open')['df']
+# print(df)        
 
         
 """
