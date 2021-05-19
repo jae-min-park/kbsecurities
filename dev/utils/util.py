@@ -33,12 +33,14 @@ def setDfData(date_start, date_end, table, datetime_col="N") :
         
     return df
 
-def date_offset(ld, ref_day, n=int):
+def date_offset(ref_day, n=int):
     """
     parameter
-        ld : 시장 영업일 리스트
-    returns : n만큼 offset 날짜
+        ref_day : offset시킬 날
+        offset : offset
+    returns : offset된 날짜
     """
+    ld = list(getDailyOHLC().index)
     i = ld.index(ref_day)
     return ld[i+n]
 
@@ -52,6 +54,30 @@ def getDailyOHLC():
     
     return df
 
+def getNdayOHLC(candle_end_date, n):
+    """
+    candle_end_date를 포함한 n일의 OHLC를 구함
+    Parameters
+    ----------
+    candle_end_date : datetime.date
+        DESCRIPTION.
+    days : 양의정수
+        candle_end_date를 포함해서 며칠짜리 캔들인지
+
+    Returns
+    -------
+    N-day candle
+
+    """
+    candle_start_date = date_offset(candle_end_date, -n+1)
+    df_ndays = setDfData(candle_start_date, candle_end_date, '`lktb1day`')
+    df_ndays.index = df_ndays.date
+
+    return {'open': df_ndays.loc[candle_start_date]['open'],
+            'hi': max(df_ndays['hi']),
+            'lo': min(df_ndays['lo']),
+            'close': df_ndays.loc[candle_end_date]['close']}
+    
     
 def getYdayOHLC(today=datetime.date, dfmkt=None):
     """
@@ -60,8 +86,7 @@ def getYdayOHLC(today=datetime.date, dfmkt=None):
     if dfmkt == None:
         dfmkt = getDailyOHLC()
     
-    ld = list(dfmkt.index)
-    yday = date_offset(ld, today, -1)
+    yday = date_offset(today, -1)
     
     return {'open': dfmkt.loc[yday]['open'],
             'hi': dfmkt.loc[yday]['hi'],
