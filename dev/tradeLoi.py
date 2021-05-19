@@ -65,6 +65,36 @@ def getLoiFromPast(date, loi_option):
     return loi
 
 
+def plotSingleLoi(tradeLoi_result):
+    """임시 플로팅 함수로 사용"""
+    df_result = tradeLoi_result['df']
+    df_result.index = df_result.local_index
+    loi_option = tradeLoi_result['loi_option']
+    df = tradeLoi_result['dfmkt']
+    loi = tradeLoi_result['loi']
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(1,1,1)
+    
+    for result_i in df_result.index:
+        marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
+        color = "tab:red" if marker == "^" else "b"
+        x = result_i
+        y = df_result.loc[result_i]['price']
+        ax.scatter(x, y, color=color, marker=marker, s=200)
+    plt.plot(df.index, df['price'])
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 18,
+            }
+    plot_name = str(loi_option) + ': '+ str(loi)
+    ax.set_xlabel(plot_name, fontdict=font)
+    plt.show()
+    pass
+
+
 def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     """
     Parameters
@@ -108,7 +138,8 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
                                       'direction', 
                                       'signal_vwap', 
                                       'trade_time', 
-                                      'price'])
+                                      'price',
+                                      'local_index'])
     
     #range 안 또는 밖의 상태를 저장
     range_status_prev = "out_of_range"
@@ -162,39 +193,25 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     
     df_result.dropna(inplace=True)
     
-    """TEST PLOT"""   
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(1,1,1)
-    for result_i in df_result.index:
-        marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
-        color = "tab:red" if marker == "^" else "b"
-        x = result_i
-        y = df_result.loc[result_i]['price']
-        ax.scatter(x, y, color=color, marker=marker, s=200)
-    plt.plot(dti, df['price'])
-    # Set plot name as xlabel
-    font = {'family': 'verdana',
-            'color':  'darkblue',
-            'weight': 'bold',
-            'size': 18,
-            }
-    plot_name = str(loi_option) + ': '+ str(loi)
-    ax.set_xlabel(plot_name, fontdict=font)
-    plt.show()
-    
-
     """"결과정리"""    
     df_result.index = df_result.trade_time
     df_result.index.name = 'index'
         
     # df_result.drop(columns='trade_time', inplace=True)
     
-    return {'df' : df_result, 'loi_option': loi_option}
+    result = {'df' : df_result, 
+              'loi_option': loi_option, 
+              'loi': loi,
+              'dfmkt': df
+              }
+    
+    plotSingleLoi(result)
+    
+    return result
 
 
             
-            
-date = datetime.date(2019,4,16)
+date = datetime.date(2021,4,1)
 
 df = tradeLoi(date, loi_option='yday_hi')['df']
 print(df)        

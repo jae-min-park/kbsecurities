@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 import datetime as dt
 
 
-def showGraph(loi, data) :
-    fig = plt.figure(figsize=(8,8))
+def showGraph(loi, data, plot_name="QP") :
+    fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(1,1,1)
     x=[]
     time = tick_df['time']
@@ -35,8 +35,16 @@ def showGraph(loi, data) :
         color = "tab:red" if marker == "^" else "b"
         x = str(i)[11:]
         y = result.loc[i]['price']
-        ax.scatter(x, y, color=color, marker=marker, )
-        
+        ax.scatter(x, y, color=color, marker=marker, s=100) #s=마커사이즈
+    
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 18,
+            }
+    
+    ax.set_xlabel(plot_name, fontdict=font)
     
     plt.show()
     
@@ -108,9 +116,10 @@ def merge(loi, items) :
 """
 날자 설정 및 플로팅용 틱데이터 차트를 불러옴
 """
-date = dt.date(2019,4,17)
+date = dt.date(2019,4,4)
+# for i in range(100):
+#     date = util.date_offset(date, 1)
 tick_df = util.setDfData(str(date), str(date), '`lktbftick`')
-
 
 """
 5가지의 loi 기준으로 dataframe을 가져오고 이후 병합할 예정임
@@ -122,8 +131,8 @@ ret4 = tl.tradeLoi(date, loi_option='yday_lo')
 ret5 = tl.tradeLoi(date, loi_option='yday_close')
 # ret5 = tl.tradeLoi(date, loi_option='intraday_hi')
 # ret5 = tl.tradeLoi(date, loi_option='multiday_hi')
-# ret5 = tl.tradeLoi(date, loi_option='multiday_lo')
 # ret5 = tl.tradeLoi(date, loi_option='intraday_lo')
+# ret5 = tl.tradeLoi(date, loi_option='multiday_lo')
 # ret5 = tl.tradeEWMAC(date)
 
 """
@@ -146,4 +155,6 @@ if not ret5['df'].empty :
 병합작업 및 플로팅 call
 """
 loi, result = merge(loi, [ret,ret2,ret3, ret4, ret5]) 
-showGraph(loi, result)
+plot_name = str(result.index[0].date()) + str(loi) +str( list(result.columns[2:]))
+# showGraph(loi, result, str(i)+') '+plot_name)
+showGraph(loi, result, plot_name)
