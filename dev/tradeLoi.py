@@ -95,7 +95,8 @@ def plotSingleLoi(tradeLoi_result):
     pass
 
 
-def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
+
+def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N"):
     """
     Parameters
     ----------
@@ -111,7 +112,11 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     Returns
     -------
     {'df': df_result,
-     'loi_option': loi_option}
+     'loi_option': loi_option
+     'loi': loi
+     'dfmkt': 시장data
+     
+     }
         df_result
             trade_time : pd.Timestamp
             direction : +1 or -1
@@ -122,15 +127,15 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     vol_option = "`" + vol_option + "`"
     
     #테스트를 위한 해당일의 시장 data load
-    df = util.setDfData(date, date, vol_option)
+    dfmkt = util.setDfData(date, date, vol_option)
     
     #loi_option에 따라 loi 설정, loi_option이 과거일 경우 함수호출
     if loi_option == 'open':
-        loi = df.iloc[0]['open']
+        loi = dfmkt.iloc[0]['open']
     else:
         loi = getLoiFromPast(date, loi_option)
     
-    dti = df.index
+    dti = dfmkt.index
     #결과를 담는 df 정의
     df_result = pd.DataFrame(index = dti, 
                              columns=['loi',
@@ -149,12 +154,12 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
-        vwap = df.loc[dti_now,'vwap']
+        vwap = dfmkt.loc[dti_now,'vwap']
         
         #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
         #df_result의 dti_pre행을 indexing
         if df_result.loc[dti_pre]['price'] == 'TBD':
-            df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(df.loc[dti_now,'time'])[7:])
+            df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
             ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
             df_result.at[dti_pre, 'price'] = ent_price
         
@@ -183,11 +188,11 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
                 
                 df_result.at[dti_now, 'loi'] = loi
                 #timedelta --> datetime.time형식으로 변환
-                df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(df.loc[dti_now,'time'])[7:])
+                df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
                 
-            df_result.at[dti_now, 'signal_vwap'] = vwap
-            df_result.at[dti_now, 'price'] = 'TBD'
-            df_result.at[dti_now, 'local_index'] = dti_now
+                df_result.at[dti_now, 'signal_vwap'] = vwap
+                df_result.at[dti_now, 'price'] = 'TBD'
+                df_result.at[dti_now, 'local_index'] = dti_now
         
     """vwap index기준 test loop종료"""
     
@@ -198,11 +203,12 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     result = {'df' : df_result, 
               'loi_option': loi_option, 
               'loi': loi,
-              'dfmkt': df
+              'dfmkt': dfmkt
               }
     
     """"결과PLOT"""    
-    plotSingleLoi(result)
+    if plot == "Y":
+        plotSingleLoi(result)
 
     """"결과정리"""    
     result['df'].index = result['df'].trade_time
@@ -214,7 +220,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
 
 
             
-date = datetime.date(2021,4,1)
+# date = datetime.date(2021,4,15)
 
 # df = tradeLoi(date, loi_option='yday_hi')['df']
 # print(df)        
@@ -222,7 +228,7 @@ date = datetime.date(2021,4,1)
 # print(df)        
 # df = tradeLoi(date, loi_option='yday_close')['df']
 # print(df)        
-df = tradeLoi(date, loi_option='open')['df']
+# df = tradeLoi(date, loi_option='open', plot="Y")['df']
 # print(df)        
 # df = tradeLoi(date, loi_option='2day_hi')['df']
 # print(df)        
@@ -233,29 +239,204 @@ df = tradeLoi(date, loi_option='open')['df']
 # df = tradeLoi(date, loi_option='3day_hi')['df']
 # print(df)        
 
+def crossTest(ema_fast, ema_slow, margin=0.5):
+    """
+    ema_fast와 ema_slow를 비교
+    
+    Returns
+    -------
+        "attached" / "above" / "below" 중에 하나를 리턴
+    """
+    if 100*abs(ema_fast - ema_slow) <= margin:
+        cross_status = "attached"
+    elif ema_fast > ema_slow:
+        cross_status = "above"
+    elif ema_fast < ema_slow:
+        cross_status = "below"
+    else:
+        cross_status = "Unexpected error!!!"
+        
+    return cross_status
+    
+    
+
+def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
+    """
+    tradeEma는 tradeLoi보다 느린 시그널을 잡는 것을 기본 전제로 한다.
+    주 활용처가 LOI가 없는 곳에서 긴 시간 머무를 때이기 때문이다.
+    
+    Parameters
+    ----------
+    date : datetime.date
+        테스트하고자 하는 날짜
+        
+    vol_option : str
+        몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
+    
+    fast_coeff, slow_coeff : ema용 Coefficient
+
+    Returns
+    -------
+    {'df': df_result,
+     'loi': loi
+     'dfmkt': 시장data}
+    
+        df_result
+            trade_time : pd.Timestamp
+            direction : +1 or -1
+            price : 매매가 일어난 가격
+    """
+    #MySQL문법에 맞게 따옴표 처리
+    vol_option = "`" + vol_option + "`"
+    
+    #테스트를 위한 해당일의 시장 data load
+    dfmkt = util.setDfData(date, date, vol_option)
+    
+    #local index
+    dti = dfmkt.index
+    
+    #결과를 담는 df 정의
+    df_result = pd.DataFrame(index = dti, 
+                             columns=['signal_time', 
+                                      'direction', 
+                                      'signal_vwap', 
+                                      'trade_time', 
+                                      'price',
+                                      'local_index',
+                                      'ema_fast',
+                                      'ema_slow'
+                                      ])
+    
+    #ema_fast와 ema_slo의 상대위치 정의
+    #"above_then_attached" / "below_then_attached" / "below" / "above" 중에 하나
+    #초기상태에 대한 정의 필요
+    prev_status = "attached"
+    
+    #현재의 signal 상태를 저장
+    signal_before = 0 
+    
+    #ema_fast, ema_slow 시작점 정의, ema는 dfmkt에 저장한다
+    dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'open']
+    dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'open']
+    
+    """vwap index기준 test loop시작"""
+    for dti_pre, dti_now in zip(dti, dti[1:]):
+        vwap = dfmkt.loc[dti_now,'vwap']
+        
+        #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
+        #df_result의 dti_pre행을 indexing
+        if df_result.loc[dti_pre]['price'] == 'TBD':
+            df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+            ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            df_result.at[dti_pre, 'price'] = ent_price
+        
+        dfmkt.at[dti_now, 'ema_fast'] = fast_coeff * vwap + (1-fast_coeff) * dfmkt.at[dti_pre, 'ema_fast']
+        dfmkt.at[dti_now, 'ema_slow'] = slow_coeff * vwap + (1-slow_coeff) * dfmkt.at[dti_pre, 'ema_slow']
+        
+        tested_status = crossTest(dfmkt.at[dti_now, 'ema_fast'], dfmkt.at[dti_now, 'ema_slow'], margin=margin)
+        
+# =============================================================================
+#         if prev_status == "above" and tested_status == "attached":
+#             prev_status = "above_then_attached"
+#         
+#         elif prev_status == "below" and tested_status == "attached":
+#             prev_status = "below_then_attached"
+#             
+#         elif (prev_status == "above_then_attached" or prev_status == "below_then_attached") and tested_status == "attached":
+#             pass
+#             
+#         elif (prev_status == "above_then_attached" and tested_status == "above") or (prev_status == "below_then_attached" and tested_status == "below"):
+#             prev_status = tested_status
+#         
+#         elif (prev_status == "above_then_attached" and tested_status == "below") or (prev_status == "below_then_attached" and tested_status == "above"):
+#             prev_status = tested_status
+#             
+#             signal = 1 if tested_status == "above" else -1
+# =============================================================================
+        
+        if (prev_status == "above" or prev_status == "below") and tested_status == "attached":
+            prev_status = tested_status
+        
+        elif prev_status == tested_status:
+            pass
+            
+        else: #below -> above or above -> below or attahced -> above/below
+            # (prev_status == "attached" and (tested_status == "above" or tested_status == "below")) or :
+            print(prev_status, tested_status)
+            prev_status = tested_status
+            
+            signal_now = 1 if tested_status == "above" else -1
+            
+            if signal_before != signal_now : #이 경우에만 시그널 발생
+                print("signal detected : ", signal_now)
+                df_result.at[dti_now, 'direction'] = signal_now
+                signal_before = signal_now
+                
+                #timedelta --> datetime.time형식으로 변환
+                df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                    
+                df_result.at[dti_now, 'signal_vwap'] = vwap
+                df_result.at[dti_now, 'price'] = 'TBD'
+                df_result.at[dti_now, 'ema_fast'] = dfmkt.at[dti_now, 'ema_fast']
+                df_result.at[dti_now, 'ema_slow'] = dfmkt.at[dti_now, 'ema_slow']
+                df_result.at[dti_now, 'local_index'] = dti_now
+    
+    """index기준 test loop종료"""       
+    
+    df_result.dropna(inplace=True)
+    
+    """가동시간 설정 """
+    start_time = '10:30:00'
+    activate_after = pd.to_datetime(str(date) + ' ' +start_time )
+    # df_result = df_result[activate_after:]
+    
+    
+    """결과1차정리, PLOT을 위함"""
+    result = {'df' : df_result, 
+              'dfmkt': dfmkt}
+        
+    if plot == "Y":
+        plotSingleMA(result)
+        
+    """"결과정리"""    
+    result['df'].index = result['df'].trade_time
+    result['df'].index.name = 'index'
+    
+    return result
   
 
-# """
-# 엑셀에 요약본 작성하려고 만드는 dataframe
-# """
-# tag_list = "long_sum", "long_len", "long_avg", "short_sum", "short_len", "short_avg", "total", "long_win", "long_lose", "short_win","short_lose"
-# df_tag = pd.DataFrame(columns=tag_list)
 
-# """
-# li는 setDfData의 param으로 준 날자들의 집합을 오름차순으로 정렬해 놓은 값이다.
-# """
-# li = sorted(list(set(df_sample['date'])))
+def plotSingleMA(tradeEma_result):
+    """임시 플로팅 함수로 사용"""
+    df_result = tradeEma_result['df']
+    df_result.index = df_result.local_index
+    df = tradeEma_result['dfmkt']
 
-# """
-# 소스코드의 경로에 result.xlsx 파일로 결과가 정리되고 날자별로 시트가 나온다.
-# """
-# writer = pd.ExcelWriter('precise.xlsx', engine='xlsxwriter')
-
-# strategy(df_sample, 'preday_close')
-# strategy(df_sample, 'preday_max')
-# strategy(df_sample, 'open')
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(1,1,1)
     
-# writer.save()
+    for result_i in df_result.index:
+        marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
+        color = "tab:red" if marker == "^" else "b"
+        x = result_i
+        y = df_result.loc[result_i]['price']
+        ax.scatter(x, y, color=color, marker=marker, s=300)
+    plt.plot(df.index, df['price'])
+    plt.plot(df.index, df['ema_fast'])
+    plt.plot(df.index, df['ema_slow'])
+    
+    
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 18,
+            }
+    plot_name = "EMA result"
+    ax.set_xlabel(plot_name, fontdict=font)
+    plt.show()
+    pass
 
+date = datetime.date(2019,3,27)
 
-
+df = tradeEma(date, vol_option='lktb50vol', plot="Y", fast_coeff=0.2, slow_coeff=0.05, margin = 0.3)['df']
