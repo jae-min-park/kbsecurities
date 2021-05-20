@@ -193,19 +193,22 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
     
     df_result.dropna(inplace=True)
     
-    """"결과정리"""    
-    df_result.index = df_result.trade_time
-    df_result.index.name = 'index'
-        
-    # df_result.drop(columns='trade_time', inplace=True)
-    
+
+    """결과1차정리, PLOT을 위함"""
     result = {'df' : df_result, 
               'loi_option': loi_option, 
               'loi': loi,
               'dfmkt': df
               }
     
+    """"결과PLOT"""    
     plotSingleLoi(result)
+
+    """"결과정리"""    
+    result['df'].index = result['df'].trade_time
+    result['df'].index.name = 'index'
+        
+    # result['df'].drop(columns='trade_time', inplace=True)
     
     return result
 
@@ -213,22 +216,22 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol'):
             
 date = datetime.date(2021,4,1)
 
-df = tradeLoi(date, loi_option='yday_hi')['df']
-print(df)        
-df = tradeLoi(date, loi_option='yday_lo')['df']
-print(df)        
-df = tradeLoi(date, loi_option='yday_close')['df']
-print(df)        
+# df = tradeLoi(date, loi_option='yday_hi')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='yday_lo')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='yday_close')['df']
+# print(df)        
 df = tradeLoi(date, loi_option='open')['df']
-print(df)        
-df = tradeLoi(date, loi_option='2day_hi')['df']
-print(df)        
-df = tradeLoi(date, loi_option='2day_lo')['df']
-print(df)        
-df = tradeLoi(date, loi_option='3day_lo')['df']
-print(df)        
-df = tradeLoi(date, loi_option='3day_hi')['df']
-print(df)        
+# print(df)        
+# df = tradeLoi(date, loi_option='2day_hi')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='2day_lo')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='3day_lo')['df']
+# print(df)        
+# df = tradeLoi(date, loi_option='3day_hi')['df']
+# print(df)        
 
   
 
