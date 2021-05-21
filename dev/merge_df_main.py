@@ -5,23 +5,16 @@ from matplotlib import pyplot as plt
 import datetime as dt
 
 
-def showGraph(loi, rm_loi, result, dfmkt, plot_name="QP") :
-    fig = plt.figure(figsize=(10,10))
-    ax = fig.add_subplot(1,1,1)
-    x=[]
-    time = tick_df['time']
-    for i in time:
-        x.append(str(i)[7:])
-    y = tick_df['close']
-    
-
-    """
-    각 거래별로 누적을 시킨 후 이득 15틱 이상이 발생하는 시점 알아보기
-    """
+"""
+dfmkt의 틱마다 거래별 pl누적을 시킴
+"""
+def calcPl(result, dfmkt) :
     num_trade = 0
     status = 'None'
+    trade_time = []
     trade_price = []
-    trade_status = []
+    trade_position = []
+    dfmkt['dt'] = pd.Timestamp(dfmkt.iloc[0]['date']) + dfmkt['time']
     dfmkt['pl_sum'] = 0.000
     dfmkt['long_sum'] = 0
     dfmkt['short_sum'] = 0
@@ -30,48 +23,62 @@ def showGraph(loi, rm_loi, result, dfmkt, plot_name="QP") :
         for idx in result.index:
             if idx == dfmkt.at[i, 'dt']:
                 vwap = dfmkt[dfmkt['dt']==idx].iloc[-1]['vwap']
+                # enter price를 구할 수 있는 거래 진입시점
                 if status!='long' and result.loc[idx, 'direction'] > 0 :
                     status = 'long'
                     trade_price.append(result.loc[idx, 'price'])
-                    trade_status.append(status)
+                    trade_position.append(status)
+                    trade_time.append(idx)
                     pl= (vwap - trade_price[num_trade])*100
                     dfmkt.at[i, num_trade] = pl
                     # dfmkt.loc[i, num_trade] = {'ent':result.loc[idx, 'price'], 
                     #                            'pl':result.loc[idx, 'price'] - dfmkt[dfmkt['dt']==idx].iloc[-1]['vwap'],
                     #                            'status':'long'}
                     num_trade+=1
-                    # for j in range(num_trade):
-                    #     dfmkt.loc[i, j] = trade_price[j] - dfmkt[dfmkt['dt']==idx].iloc[-1]['vwap']
                 elif status!='short' and result.loc[idx, 'direction'] < 0 :
                     status = 'short'
                     trade_price.append(result.loc[idx, 'price'])
-                    trade_status.append(status)
+                    trade_position.append(status)
+                    trade_time.append(idx)
                     pl = (trade_price[num_trade] - vwap)*100
                     dfmkt.at[i, num_trade] = pl
                     num_trade+=1        
+                # 진입시점과 똑같은 시각에 거래가 있었으나 진입으로 처리 안될때의 케이스
                 elif status == 'long' or status =='short':
                     for j in range(num_trade):
                         pl = (vwap - trade_price[j])*100
-                        if trade_status[j]=='long':
+                        if trade_position[j]=='long':
                             dfmkt.loc[i, j] = pl
-                        elif trade_status[j]=='short':
+                        elif trade_position[j]=='short':
                             dfmkt.loc[i, j] = -pl
+            # loi 부근이 아닐 때에도 포지션을 유지하고 있다고 할때 pl 값 할당
             else:
                 for j in range(num_trade):
                     pl = (dfmkt.at[i,'vwap'] - trade_price[j])*100
-                    if trade_status[j]=='long':
+                    if trade_position[j]=='long':
                         dfmkt.loc[i, j] = pl
-                    elif trade_status[j]=='short':
+                    elif trade_position[j]=='short':
                         dfmkt.loc[i, j] = -pl
+        #시각 별 pl값의 sum 및 position 개수
         for j in range(num_trade) :
             sum_ += round(dfmkt.at[i,j],3)
         dfmkt.at[i, 'pl_sum'] = sum_
-        for status in trade_status:
+        for status in trade_position:
             if status =='long':
                 dfmkt.at[i, 'long_sum'] += 1
             elif status =='short':
                 dfmkt.at[i, 'short_sum'] += 1
+    return dfmkt, trade_price, trade_position, trade_time
                 
+                
+def showGraph(loi, rm_loi, result, plot_name="QP") :
+    fig = plt.figure(figsize=(10,10))
+    ax = fig.add_subplot(1,1,1)
+    x=[]
+    time = tick_df['time']
+    for i in time:
+        x.append(str(i)[7:])
+    y = tick_df['close']
     
     """
     x축(시간) 값들을 잘 보이도록 개수 및 각도 조정
@@ -91,7 +98,6 @@ def showGraph(loi, rm_loi, result, dfmkt, plot_name="QP") :
         plt.axhline(y=loi[1][i], linewidth=1, color="blue")
         plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
    
-
     """
     마커를 플로팅함
     """
@@ -111,10 +117,9 @@ def showGraph(loi, rm_loi, result, dfmkt, plot_name="QP") :
     
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
-    return dfmkt, trade_price, trade_status
+    
     
 def merge(loi, items) :
-    
     """
     0.03이내 들어오는 loi 끼리는 정리, 정리된 loi와 삭제된 rmLoi로 나눔
     """
@@ -199,7 +204,7 @@ def merge(loi, items) :
     rm_loi = [opt_rm_loi, val_rm_loi]
     return loi,rm_loi,resultDf
 
-
+#%%실행 main
 """
 날자 설정 및 플로팅용 틱데이터 차트를 불러옴
 """
@@ -240,14 +245,12 @@ loi.append({"opt":ret7['loi_option'],"val":ret7['loi']})
 loi.append({"opt":ret8['loi_option'],"val":ret8['loi']})
 loi.append({"opt":ret9['loi_option'],"val":ret9['loi']})
 
-
 """
 병합작업 및 플로팅 call
 """
 loi, rm_loi, result = merge(loi, [ret,ret2,ret3, ret4, ret5, ret6, ret7, ret8, ret9]) 
 plot_name = str(result.index[0].date()) + str(loi[1]) +str(loi[0])
 # showGraph(loi, result, str(i)+') '+plot_name)
-
-ret['dfmkt']['dt'] = pd.Timestamp(date) + ret['dfmkt']['time'] 
-
-a,b,c = showGraph(loi, rm_loi, result, ret['dfmkt'], plot_name)
+# ret['dfmkt']['dt'] = pd.Timestamp(date) + ret['dfmkt']['time'] 
+dfmkt, trade_prices, trade_positions, trade_time = calcPl(result, ret['dfmkt'])
+showGraph(loi, rm_loi, result,  plot_name)
