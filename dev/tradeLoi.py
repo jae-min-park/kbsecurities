@@ -23,11 +23,11 @@ def upp(item) :
     return item / 100
         
 
-def rangeTest(vwap, loi):
+def rangeTest(vwap, loi, margin):
     """
     vwap과 loi 거리 비교하여 loi range 내외를 판단
     """
-    if 100*abs(vwap - loi) <= 1.2:
+    if 100*abs(vwap - loi) <= margin:
         where = "within_range"
     else:
         where = "out_of_range"
@@ -89,14 +89,15 @@ def plotSingleLoi(tradeLoi_result):
             'weight': 'bold',
             'size': 18,
             }
-    plot_name = str(loi_option) + ': '+ str(loi)
+    plot_name = '{0}: {1}, Margin: {2}'
+    plot_name = plot_name.format(loi_option, loi, tradeLoi_result['margin'])
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
     pass
 
 
 
-def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N"):
+def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", execution="adjusted", margin=1.0):
     """
     Parameters
     ----------
@@ -160,10 +161,16 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N"):
         #df_result의 dti_pre행을 indexing
         if df_result.loc[dti_pre]['price'] == 'TBD':
             df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
-            ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            
+            if execution =="adjusted":
+                ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            elif execution == "vwap":
+                ent_price = vwap
+            else:
+                raise NameError('Wrong execution option')
             df_result.at[dti_pre, 'price'] = ent_price
         
-        range_status = rangeTest(vwap, loi)
+        range_status = rangeTest(vwap, loi, margin)
         
         #LOI 레인지 밖에서 안으로 들어온 경우 
         if range_status_prev == "out_of_range" and range_status == "within_range":
@@ -203,7 +210,8 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N"):
     result = {'df' : df_result, 
               'loi_option': loi_option, 
               'loi': loi,
-              'dfmkt': dfmkt
+              'dfmkt': dfmkt,
+              'margin': margin
               }
     
     """"결과PLOT"""    
@@ -219,25 +227,6 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N"):
     return result
 
 
-            
-# date = datetime.date(2021,4,15)
-
-# df = tradeLoi(date, loi_option='yday_hi')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='yday_lo')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='yday_close')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='open', plot="Y")['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='2day_hi')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='2day_lo')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='3day_lo')['df']
-# print(df)        
-# df = tradeLoi(date, loi_option='3day_hi')['df']
-# print(df)        
 
 def crossTest(ema_fast, ema_slow, margin=0.5):
     """
@@ -254,13 +243,13 @@ def crossTest(ema_fast, ema_slow, margin=0.5):
     elif ema_fast < ema_slow:
         cross_status = "below"
     else:
-        cross_status = "Unexpected error!!!"
+        raise NameError("Unexpected!!!")
         
     return cross_status
     
     
 
-def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
+def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
     """
     tradeEma는 tradeLoi보다 느린 시그널을 잡는 것을 기본 전제로 한다.
     주 활용처가 LOI가 없는 곳에서 긴 시간 머무를 때이기 때문이다.
@@ -272,6 +261,10 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=
         
     vol_option : str
         몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
+        
+    execution : 
+        "adjusted" --> upp/flr 활용하여 보수적 진입가격
+        "vwap" --> dti_next의 vwap 그대로 활용
     
     fast_coeff, slow_coeff : ema용 Coefficient
 
@@ -327,7 +320,14 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=
         #df_result의 dti_pre행을 indexing
         if df_result.loc[dti_pre]['price'] == 'TBD':
             df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
-            ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            
+            if execution =="adjusted":
+                ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            elif execution == "vwap":
+                ent_price = vwap
+            else:
+                raise NameError('Wrong execution option')
+                
             df_result.at[dti_pre, 'price'] = ent_price
         
         dfmkt.at[dti_now, 'ema_fast'] = fast_coeff * vwap + (1-fast_coeff) * dfmkt.at[dti_pre, 'ema_fast']
@@ -335,34 +335,15 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=
         
         tested_status = crossTest(dfmkt.at[dti_now, 'ema_fast'], dfmkt.at[dti_now, 'ema_slow'], margin=margin)
         
-# =============================================================================
-#         if prev_status == "above" and tested_status == "attached":
-#             prev_status = "above_then_attached"
-#         
-#         elif prev_status == "below" and tested_status == "attached":
-#             prev_status = "below_then_attached"
-#             
-#         elif (prev_status == "above_then_attached" or prev_status == "below_then_attached") and tested_status == "attached":
-#             pass
-#             
-#         elif (prev_status == "above_then_attached" and tested_status == "above") or (prev_status == "below_then_attached" and tested_status == "below"):
-#             prev_status = tested_status
-#         
-#         elif (prev_status == "above_then_attached" and tested_status == "below") or (prev_status == "below_then_attached" and tested_status == "above"):
-#             prev_status = tested_status
-#             
-#             signal = 1 if tested_status == "above" else -1
-# =============================================================================
-        
         if (prev_status == "above" or prev_status == "below") and tested_status == "attached":
             prev_status = tested_status
         
         elif prev_status == tested_status:
             pass
-            
-        else: #below -> above or above -> below or attahced -> above/below
-            # (prev_status == "attached" and (tested_status == "above" or tested_status == "below")) or :
-            print(prev_status, tested_status)
+        
+        #below -> above or above -> below or attahced -> above/below
+        else: 
+            # print(prev_status, tested_status)
             prev_status = tested_status
             
             signal_now = 1 if tested_status == "above" else -1
@@ -393,7 +374,8 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", fast_coeff=0.3, slow_coeff=
     
     """결과1차정리, PLOT을 위함"""
     result = {'df' : df_result, 
-              'dfmkt': dfmkt}
+              'dfmkt': dfmkt,
+              'config': (fast_coeff, slow_coeff, margin)}
         
     if plot == "Y":
         plotSingleMA(result)
@@ -430,13 +412,22 @@ def plotSingleMA(tradeEma_result):
     font = {'family': 'verdana',
             'color':  'darkblue',
             'weight': 'bold',
-            'size': 18,
+            'size': 12,
             }
-    plot_name = "EMA result"
+    plot_name = 'Fast_coef: {0}, Slow_coef: {1}, margin: {2}'
+    plot_name = plot_name.format(tradeEma_result['config'][0],
+                                 tradeEma_result['config'][1],
+                                 tradeEma_result['config'][2])
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
     pass
 
-date = datetime.date(2019,3,27)
 
-df = tradeEma(date, vol_option='lktb50vol', plot="Y", fast_coeff=0.2, slow_coeff=0.05, margin = 0.3)['df']
+#%% MAIN 실행 영역
+date = datetime.date(2019,4,30)
+
+df = tradeLoi(date, loi_option='yday_lo', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
+df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
+df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
+
+result = tradeEma(date, vol_option='lktb200vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 0.5)
