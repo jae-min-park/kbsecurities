@@ -58,6 +58,18 @@ def getLoiFromPast(date, loi_option):
     elif loi_option == '3day_lo':
         yday = util.date_offset(date, -1)
         loi = util.getNdayOHLC(yday, 3)['lo']
+    elif loi_option == '5day_hi':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 5)['hi']
+    elif loi_option == '5day_lo':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 5)['lo']
+    elif loi_option == '10day_hi':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 10)['hi']
+    elif loi_option == '10day_lo':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 10)['lo']
         
     else:
         print("Wrong LOI option!!")
@@ -152,6 +164,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", executio
     
     #현재의 signal 상태를 저장
     signal_before = 0 
+    signal_before_at = dfmkt.at[dti[0], 'time']
     
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
@@ -188,10 +201,15 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", executio
             
             #1은 LOI 레인지 상향돌파, vice versa
             signal_now = 1 if vwap > loi else -1
+            signal_now_at = dfmkt.at[dti_now, 'time']
             
-            if signal_before != signal_now :
+            #이전시그널과 반대방향 또는 이전시그널발생후 30분이 지났을 때
+            if (signal_before != signal_now) or \
+                (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
+                    
                 df_result.at[dti_now, 'direction'] = signal_now
                 signal_before = signal_now
+                signal_before_at = signal_now_at
                 
                 df_result.at[dti_now, 'loi'] = loi
                 #timedelta --> datetime.time형식으로 변환
@@ -349,7 +367,7 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
             signal_now = 1 if tested_status == "above" else -1
             
             if signal_before != signal_now : #이 경우에만 시그널 발생
-                print("signal detected : ", signal_now)
+                # print("signal detected : ", signal_now)
                 df_result.at[dti_now, 'direction'] = signal_now
                 signal_before = signal_now
                 
@@ -367,8 +385,8 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
     df_result.dropna(inplace=True)
     
     """가동시간 설정 """
-    start_time = '10:30:00'
-    activate_after = pd.to_datetime(str(date) + ' ' +start_time )
+    # start_time = '10:30:00'
+    # activate_after = pd.to_datetime(str(date) + ' ' +start_time )
     # df_result = df_result[activate_after:]
     
     
@@ -414,20 +432,58 @@ def plotSingleMA(tradeEma_result):
             'weight': 'bold',
             'size': 12,
             }
-    plot_name = 'Fast_coef: {0}, Slow_coef: {1}, margin: {2}'
+    plot_name = '{3}, Fast_coef: {0}, Slow_coef: {1}, margin: {2}'
     plot_name = plot_name.format(tradeEma_result['config'][0],
                                  tradeEma_result['config'][1],
-                                 tradeEma_result['config'][2])
+                                 tradeEma_result['config'][2],
+                                 str(tradeEma_result['dfmkt'].date[0]))
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
     pass
 
+def calPlEma(result_ema):
+    #daytrader를 가정하고 PL 기록 및 포지션 관리
+    df_trade = result_ema['df']
+
+    close_price = result_ema['dfmkt'].iloc[-1]['price']
+    
+    df_trade['amt'] = 2
+    df_trade.at[df_trade.index[0], 'amt'] = 1
+    df_trade['pl'] = 100 * df_trade.direction * df_trade.amt * (close_price - df_trade.price)
+    #!!! stop-out loss 
+    
+    
+    date = str(df_trade.index[0].date())
+    daysum = round(df_trade['pl'].sum(), 1)
+    print(date, daysum)
+    
+    
+    return date, daysum
+
+    
+    
+    
 
 #%% MAIN 실행 영역
-date = datetime.date(2019,4,30)
+date = datetime.date(2020,1,21)
 
-df = tradeLoi(date, loi_option='yday_lo', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
-df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
-df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
+# result = tradeLoi(date, loi_option='yday_lo', plot="Y", execution="vwap", margin=1.5)
+# df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
+# df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
 
-result = tradeEma(date, vol_option='lktb200vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 0.5)
+ref_day = datetime.date(2018,1,2)
+df_result_ema = pd.DataFrame(columns=['date', 'pl'])
+
+for i in range(800):
+    date = util.date_offset(ref_day, i)
+    result_ema = tradeEma(date, vol_option='lktb50vol', plot="N", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
+    df_result_ema.at[i, 'date'], df_result_ema.at[i, 'pl'] = calPlEma(result_ema)
+    print(round(df_result_ema.pl.sum(), 1))
+
+# df_result_ema.to_excel("ema_bt.xlsx")
+
+
+
+
+
+
