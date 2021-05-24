@@ -196,9 +196,9 @@ def merge(loi, items) :
     for i in idx : 
         for item in items:
             if i in item['df'].index:
-                resultDf.loc[i,'direction'] += item['df'].loc[i,'direction']
-                resultDf.loc[i,item['loi_option']] = item['df'].loc[i,'direction']
-                resultDf.loc[i,'price'] = item['df'].loc[i,'price']
+                resultDf.loc[i,'direction'] += item['df'].loc[i,'direction'] if type(item['df'].loc[i,'direction']) == int else item['df'].loc[i,'direction'][-1]
+                resultDf.loc[i,item['loi_option']] = item['df'].loc[i,'direction'] if type(item['df'].loc[i,'direction']) == int else item['df'].loc[i,'direction'][-1]
+                resultDf.loc[i,'price'] = item['df'].loc[i,'price'] if type(item['df'].loc[i,'price']) == float else item['df'].loc[i,'price'][-1] 
     
     loi = [opt_loi,val_loi]
     rm_loi = [opt_rm_loi, val_rm_loi]
@@ -208,7 +208,7 @@ def merge(loi, items) :
 """
 날자 설정 및 플로팅용 틱데이터 차트를 불러옴
 """
-date = dt.date(2019,1,16)
+date = dt.date(2021,3,15)
 # for i in range(100):
 #     date = util.date_offset(date, 1)
 tick_df = util.setDfData(str(date), str(date), '`lktbftick`')
