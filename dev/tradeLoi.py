@@ -454,35 +454,42 @@ def calPlEma(result_ema):
     
     
     date = str(df_trade.index[0].date())
-    daysum = round(df_trade['pl'].sum(), 1)
-    print(date, daysum)
+    day_pl_sum = round(df_trade['pl'].sum(), 1)
+    day_signal_count = df_trade['pl'].count()
+    print(date, day_pl_sum, day_signal_count)
     
-    
-    return date, daysum
+    return date, day_pl_sum, day_signal_count
 
+def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1.5):
+    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_signal'])
+    for i, day in enumerate(ld):
+        result_ema = tradeEma(day, vol_option=vol_option, plot="N", execution=execution, 
+                              fast_coeff=fast_coeff, slow_coeff=slow_coeff, margin = margin)
+        dfpl.at[i, 'date'], dfpl.at[i, 'pl'], dfpl.at[i, 'num_signal'] = calPlEma(result_ema)
+        print(round(dfpl.pl.sum(), 1), round(dfpl.pl.mean(), 2), round(dfpl.pl.std(),2))
     
+    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    # dfpl.resample('Y').sum()
+    
+    return dfpl
     
     
 
 #%% MAIN 실행 영역
-date = datetime.date(2020,1,21)
+date = datetime.date(2020,3,20)
 
 # result = tradeLoi(date, loi_option='yday_lo', plot="Y", execution="vwap", margin=1.5)
 # df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
 # df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
+# r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1)
+# calPlEma(r)
 
-ref_day = datetime.date(2018,1,2)
-df_result_ema = pd.DataFrame(columns=['date', 'pl'])
+ld = list(util.getDailyOHLC().index)
 
-for i in range(800):
-    date = util.date_offset(ref_day, i)
-    result_ema = tradeEma(date, vol_option='lktb50vol', plot="N", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
-    df_result_ema.at[i, 'date'], df_result_ema.at[i, 'pl'] = calPlEma(result_ema)
-    print(round(df_result_ema.pl.sum(), 1))
-
-# df_result_ema.to_excel("ema_bt.xlsx")
-
-
+# dfpl_200vol = emaBT([date], vol_option='lktb200vol', execution="vwap", fast_coeff=0.4, slow_coeff=0.05, margin = 1.5)
+# dfpl_100vol = emaBT(ld, vol_option='lktb100vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
+# dfpl_050vol = emaBT(ld, vol_option='lktb50vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
+dfpl_030vol = emaBT(ld, vol_option='lktb30vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
 
 
 
