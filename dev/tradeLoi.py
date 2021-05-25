@@ -405,7 +405,6 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
     return result
   
 
-
 def plotSingleMA(tradeEma_result):
     """임시 플로팅 함수로 사용"""
     df_result = tradeEma_result['df']
@@ -425,7 +424,6 @@ def plotSingleMA(tradeEma_result):
     plt.plot(df.index, df['ema_fast'])
     plt.plot(df.index, df['ema_slow'])
     
-    
     # Set plot name as xlabel
     font = {'family': 'verdana',
             'color':  'darkblue',
@@ -442,7 +440,7 @@ def plotSingleMA(tradeEma_result):
     pass
 
 def calPlEma(result_ema):
-    #daytrader를 가정하고 PL 기록 및 포지션 관리
+    """단순 종가기준 PL만 산출"""
     df_trade = result_ema['df']
 
     close_price = result_ema['dfmkt'].iloc[-1]['price']
@@ -460,6 +458,42 @@ def calPlEma(result_ema):
     
     return date, day_pl_sum, day_signal_count
 
+def calPlEma_wlossCut(result_ema):
+    """daytrader를 가정하고 PL에 따른 손절 실행"""
+    pass
+
+def calPlEmaTimely(r, timebin="5min"):
+    """시간흐름에 따른 PL 계산
+    Parameters
+        r : tradeEma 리턴값 
+        {'df' : df_result, 
+         'dfmkt': dfmkt,
+         'config': (fast_coeff, slow_coeff, margin)}
+    Returns: None
+    
+    """
+    
+    #signal table 정리, 첫 signal 이후의 trade는 두배이므로 amt = 2
+    sig = r['df']
+    sig['amt'] = 2 
+    sig.at[sig.index[0], 'amt'] = 1
+    
+    #오늘 날짜 정의
+    date = r['dfmkt']['date'][0]
+    
+    #시간대별 PL을 알아보기 위한 기초 시장 DATA 
+    df1min = util.setDfData(date, date, '`lktb1min`', datetime_col="Y")
+    df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
+    
+    for t in df.index:
+        #ts: til now signal table
+        ts = sig[:t]
+        prc = df.at[t, 'close']
+        pl = sum(100 * ts.direction.values * ts.amt.values * (prc - ts.price.values))
+        df.at[t, 'pl'] = pl
+        
+    return df
+
 def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1.5):
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_signal'])
     for i, day in enumerate(ld):
@@ -472,24 +506,29 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
     # dfpl.resample('Y').sum()
     
     return dfpl
+
+#!!! 장 시작 후 EMA가 어느정도 형성된 후에 signal 접수
+
     
     
 
 #%% MAIN 실행 영역
-date = datetime.date(2020,3,20)
+date = datetime.date(2020,3,13)
 
 # result = tradeLoi(date, loi_option='yday_lo', plot="Y", execution="vwap", margin=1.5)
 # df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
 # df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
-# r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1)
-# calPlEma(r)
+r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.02, margin = 1.0)
+print(calPlEma(r))
+dfpl = calPlEmaTimely(r)
+dfpl.plot()
 
-ld = list(util.getDailyOHLC().index)
+# ld = list(util.getDailyOHLC().index)
 
 # dfpl_200vol = emaBT([date], vol_option='lktb200vol', execution="vwap", fast_coeff=0.4, slow_coeff=0.05, margin = 1.5)
 # dfpl_100vol = emaBT(ld, vol_option='lktb100vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
-# dfpl_050vol = emaBT(ld, vol_option='lktb50vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
-dfpl_030vol = emaBT(ld, vol_option='lktb30vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
+# dfpl_050vol = emaBT(ld, vol_option='lktb50vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.03, margin = 1.0)
+# dfpl_030vol = emaBT(ld, vol_option='lktb30vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
 
 
 
