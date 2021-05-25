@@ -30,6 +30,7 @@ def setDfData(date_start, date_end, table, datetime_col="N") :
     df = pd.DataFrame(result)
     if datetime_col == "Y":
         df['datetime'] = pd.to_datetime(df.date.astype(str) + ' ' + df.time.astype(str).apply(lambda x: x[7:]))
+        df.set_index('datetime', inplace=True)
         
     return df
 
