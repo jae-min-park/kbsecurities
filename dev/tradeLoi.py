@@ -136,8 +136,8 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", executio
             price : 매매가 일어난 가격
         loi_option
     """
-    #MySQL문법에 맞게 따옴표 처리
-    vol_option = "`" + vol_option + "`"
+    # #MySQL문법에 맞게 따옴표 처리
+    # vol_option = "`" + vol_option + "`"
     
     #테스트를 위한 해당일의 시장 data load
     dfmkt = util.setDfData(date, date, vol_option)
@@ -297,8 +297,8 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
             direction : +1 or -1
             price : 매매가 일어난 가격
     """
-    #MySQL문법에 맞게 따옴표 처리
-    vol_option = "`" + vol_option + "`"
+    # #MySQL문법에 맞게 따옴표 처리
+    # vol_option = "`" + vol_option + "`"
     
     #테스트를 위한 해당일의 시장 data load
     dfmkt = util.setDfData(date, date, vol_option)
