@@ -204,8 +204,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", executio
             signal_now_at = dfmkt.at[dti_now, 'time']
             
             #이전시그널과 반대방향 또는 이전시그널발생후 30분이 지났을 때
-            if (signal_before != signal_now) or \
-                (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
+            if (signal_before != signal_now) or (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
                     
                 df_result.at[dti_now, 'direction'] = signal_now
                 signal_before = signal_now
@@ -267,10 +266,11 @@ def crossTest(ema_fast, ema_slow, margin=0.5):
     
     
 
-def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
+def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted",
+             fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
     """
-    tradeEma는 tradeLoi보다 느린 시그널을 잡는 것을 기본 전제로 한다.
-    주 활용처가 LOI가 없는 곳에서 긴 시간 머무를 때이기 때문이다.
+    tradeEma는 장중 한방향 트렌드가 지속될 때 많은 수익을 추구
+    필연적으로 방향전환이 많은 날은 손실 발생 가능
     
     Parameters
     ----------
@@ -280,7 +280,7 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
     vol_option : str
         몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
         
-    execution : 
+    execution :
         "adjusted" --> upp/flr 활용하여 보수적 진입가격
         "vwap" --> dti_next의 vwap 그대로 활용
     
@@ -288,14 +288,10 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
 
     Returns
     -------
-    {'df': df_result,
-     'loi': loi
-     'dfmkt': 시장data}
+    result = {'df' : df_result, 
+              'dfmkt': dfmkt,
+              'config': (fast_coeff, slow_coeff, margin)}
     
-        df_result
-            trade_time : pd.Timestamp
-            direction : +1 or -1
-            price : 매매가 일어난 가격
     """
     #MySQL문법에 맞게 따옴표 처리
     vol_option = "`" + vol_option + "`"
@@ -319,7 +315,7 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
                                       ])
     
     #ema_fast와 ema_slo의 상대위치 정의
-    #"above_then_attached" / "below_then_attached" / "below" / "above" 중에 하나
+    #"attached" / "below" / "above" 중에 하나
     #초기상태에 대한 정의 필요
     prev_status = "attached"
     
@@ -379,16 +375,15 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted", fast_
                 df_result.at[dti_now, 'ema_fast'] = dfmkt.at[dti_now, 'ema_fast']
                 df_result.at[dti_now, 'ema_slow'] = dfmkt.at[dti_now, 'ema_slow']
                 df_result.at[dti_now, 'local_index'] = dti_now
-    
     """index기준 test loop종료"""       
     
+    """NA제거"""
     df_result.dropna(inplace=True)
     
     """가동시간 설정 """
     # start_time = '10:30:00'
     # activate_after = pd.to_datetime(str(date) + ' ' +start_time )
     # df_result = df_result[activate_after:]
-    
     
     """결과1차정리, PLOT을 위함"""
     result = {'df' : df_result, 
@@ -513,15 +508,15 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
     
 
 #%% MAIN 실행 영역
-date = datetime.date(2020,3,13)
+date = datetime.date(2020,3,19)
 
 # result = tradeLoi(date, loi_option='yday_lo', plot="Y", execution="vwap", margin=1.5)
 # df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
 # df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
-r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.02, margin = 1.0)
+r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.02, margin = 1)
 print(calPlEma(r))
-dfpl = calPlEmaTimely(r)
-dfpl.plot()
+dfpl = calPlEmaTimely(r, timebin="1min")
+# dfpl.plot()
 
 # ld = list(util.getDailyOHLC().index)
 
