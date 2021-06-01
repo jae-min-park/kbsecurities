@@ -457,14 +457,15 @@ def calPlEma_wlossCut(result_ema):
     """daytrader를 가정하고 PL에 따른 손절 실행"""
     pass
 
-def calPlEmaTimely(r, timebin="5min"):
+def calPlEmaTimely(r, timebin="5min", losscut="N"):
     """시간흐름에 따른 PL 계산
     Parameters
-        r : tradeEma 리턴값 
-        {'df' : df_result, 
-         'dfmkt': dfmkt,
-         'config': (fast_coeff, slow_coeff, margin)}
-    Returns: None
+        r : tradeEma 리턴값
+            {'df' : df_result, 
+             'dfmkt': dfmkt,
+             'config': (fast_coeff, slow_coeff, margin)}
+    Returns
+        timelyPL : 시간대별 PL을 기록한 dataframe
     
     """
     
@@ -478,14 +479,29 @@ def calPlEmaTimely(r, timebin="5min"):
     
     #시간대별 PL을 알아보기 위한 기초 시장 DATA 
     df1min = util.setDfData(date, date, '`lktb1min`', datetime_col="Y")
+    
+    #시간대별 PL을 정리하기 위한 dataframe
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
     
     for t in df.index:
         #ts: til now signal table
         ts = sig[:t]
         prc = df.at[t, 'close']
+        
         pl = sum(100 * ts.direction.values * ts.amt.values * (prc - ts.price.values))
         df.at[t, 'pl'] = pl
+        
+        num_trade = ts.amt.sum()
+        df.at[t, 'num_trade'] = num_trade
+        
+        # std = 
+        
+        #손절조건검토
+        # if losscut == "Y" and pl < -10 and t.time() > datetime.time(12,0) :
+        # if losscut == "Y"   :
+            # break
+    
+    df.dropna(inplace=True)
         
     return df
 
@@ -508,23 +524,53 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
     
 
 #%% MAIN 실행 영역
-date = datetime.date(2020,3,19)
 
-# result = tradeLoi(date, loi_option='yday_lo', plot="Y", execution="vwap", margin=1.5)
-# df = tradeLoi(date, loi_option='2day_hi', vol_option='lktb30vol', plot="Y", execution="vwap", margin=0.7)['df']
-# df = tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="Y", execution="vwap", margin=1.0)['df']
-r = tradeEma(date, vol_option='lktb50vol', plot="Y", execution="vwap", fast_coeff=0.3, slow_coeff=0.02, margin = 1)
-print(calPlEma(r))
-dfpl = calPlEmaTimely(r, timebin="1min")
-# dfpl.plot()
+def main():
+    
+    print("Running main function")
+    
+    #일봉기준 전체 date list
+    ld = list(util.getDailyOHLC().index)
+    # ld = [datetime.date(2017,12,20)]
+    
+    #일간 PL을 기록하는 dataframe
+    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
+    
+    for i, day in enumerate(ld):
+        result_ema = tradeEma(day, 'lktb50vol', plot="N", execution="vwap", 
+                              fast_coeff=0.3,
+                              slow_coeff=0.05,
+                              margin = 1.0)
+        
+        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="N")
+        
+        dfpl.at[i, 'date'] = day
+        
+        pl_of_the_day = round(timelyPl.pl[-1], 2)
+        dfpl.at[i, 'pl'] = pl_of_the_day
+        
+        num_trade = timelyPl.num_trade[-1]
+        dfpl.at[i, 'num_trade'] = num_trade
+        
+        trade_ended_at = str(timelyPl.index[-1])[-8:]
+        
+        #당일의 결과
+        # print(day, "    ", pl_of_the_day, str(timelyPl.index[-1])[-8:])
+        print(f'{day}    pl={pl_of_the_day},  {trade_ended_at},   {num_trade}')
+        
+        #누적결과
+        print(round(dfpl.pl.sum(), 1), 
+              round(dfpl.pl.mean(), 2), 
+              round(dfpl.pl.std(), 2),
+              round(dfpl.num_trade.mean(), 1), "trades/day",
+              "\n=====================================")
+    
+    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    
+    return dfpl
 
-# ld = list(util.getDailyOHLC().index)
-
-# dfpl_200vol = emaBT([date], vol_option='lktb200vol', execution="vwap", fast_coeff=0.4, slow_coeff=0.05, margin = 1.5)
-# dfpl_100vol = emaBT(ld, vol_option='lktb100vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
-# dfpl_050vol = emaBT(ld, vol_option='lktb50vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.03, margin = 1.0)
-# dfpl_030vol = emaBT(ld, vol_option='lktb30vol', execution="vwap", fast_coeff=0.3, slow_coeff=0.05, margin = 1.5)
-
+if __name__ == "__main__":
+    dfpl = main()
 
 
 
