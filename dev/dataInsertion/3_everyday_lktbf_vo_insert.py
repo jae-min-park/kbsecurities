@@ -1,6 +1,7 @@
 import pandas as pd
 from tqdm import tqdm
 import pymysql
+import datetime
 
 test_db = pymysql.connect(user='admin',
                           passwd='se21121',
@@ -70,8 +71,10 @@ def reshapeVolandCommit(df_sample, li, table, unit_volume):
         insertExcelData(cursor,df_reshaped,table)
         test_db.commit()
 
-start_date ='2021-04-28'
-end_date ='2021-06-03'
+# start_date ='2021-06-03'
+start_date =str(datetime.datetime.today())[:10]
+# end_date ='2021-06-03'
+end_date =str(datetime.datetime.today())[:10]
 
 """ 국선 10년 10vol"""
 df_sample = setDfData(start_date, end_date, 'lktb1vol')

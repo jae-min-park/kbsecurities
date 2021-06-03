@@ -1,6 +1,7 @@
 import pandas as pd
 from tqdm import tqdm
 import pymysql
+import datetime
 
 test_db = pymysql.connect(user='admin',
                           passwd='se21121',
@@ -56,8 +57,10 @@ def parseVolandCommit(df_sample,li, table) :
     test_db.commit()
 
 
-start_date = '2021-06-03'
-end_date = '2021-06-03'
+# start_date = '2021-06-03'
+start_date = str(datetime.datetime.today())[:10]
+# end_date = '2021-06-03'
+end_date = str(datetime.datetime.today())[:10]
 
 """ 국선 10년 1vol"""
 df_sample = setDfData(start_date, end_date, 'lktbftick')
