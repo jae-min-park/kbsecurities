@@ -45,6 +45,12 @@ def date_offset(ref_day, n=int):
     i = ld.index(ref_day)
     return ld[i+n]
 
+""" table이 param으로 주어지면 해당 table에서 날자 리스트를 오름차순으로 뽑아주는 함수 """
+def getDateList(table):
+    df = setDfData('2000-10-01','2099-04-30', table)
+    li = sorted(list(set(df['date'])))
+    return li
+
 def getDailyOHLC():
     """
     returns : 일봉 dataframe
