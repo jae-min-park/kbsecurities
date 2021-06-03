@@ -22,7 +22,7 @@ def insertKtbData(cursor):
     df = df_excel[1]
     print(df)
     
-    for i in range(len(df.index)) :
+    for i in tqdm(range(len(df.index))) :
         code = str(df.iloc[i,0])
         date = str(df.iloc[i,1])[0:10]
         time = str(df.iloc[i,2])
@@ -43,7 +43,7 @@ def insertLktbData(cursor):
     df = df_excel[1]
     print(df)
     
-    for i in range(len(df.index)) :
+    for i in tqdm(range(len(df.index))) :
         code = str(df.iloc[i,0])
         date = str(df.iloc[i,1])[0:10]
         time = str(df.iloc[i,2])
@@ -64,7 +64,7 @@ def insertUsdKrwData(cursor):
     df = df_excel[1]
     print(df)
     
-    for i in range(len(df.index)) :
+    for i in tqdm(range(len(df.index))) :
         code = str(df.iloc[i,0])
         date = str(df.iloc[i,1])[0:10]
         time = str(df.iloc[i,2])
