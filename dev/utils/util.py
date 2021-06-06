@@ -18,8 +18,6 @@ test_db = pymysql.connect(user='admin',
 
 cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
-# df_sample = pd.read_excel('reshape_real_1d.xlsx')
-
 
 def setDfData(date_start, date_end, table, datetime_col="N") :
     sql = "SELECT * FROM "+ table +" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
@@ -55,7 +53,7 @@ def getDailyOHLC():
     """
     returns : 일봉 dataframe
     """
-    df = setDfData('2000-10-01','2099-04-30', '`lktb1day`')
+    df = setDfData('2000-10-01','2099-04-30', 'lktbf_day')
     df.index = df.date
     df = df.drop(columns='date')
     
@@ -77,12 +75,12 @@ def getNdayOHLC(candle_end_date, n):
 
     """
     candle_start_date = date_offset(candle_end_date, -n+1)
-    df_ndays = setDfData(candle_start_date, candle_end_date, '`lktb1day`')
+    df_ndays = setDfData(candle_start_date, candle_end_date, '`lktbf_day`')
     df_ndays.index = df_ndays.date
 
     return {'open': df_ndays.loc[candle_start_date]['open'],
-            'hi': max(df_ndays['hi']),
-            'lo': min(df_ndays['lo']),
+            'high': max(df_ndays['high']),
+            'low': min(df_ndays['low']),
             'close': df_ndays.loc[candle_end_date]['close']}
     
     
@@ -96,8 +94,8 @@ def getYdayOHLC(today=datetime.date, dfmkt=None):
     yday = date_offset(today, -1)
     
     return {'open': dfmkt.loc[yday]['open'],
-            'hi': dfmkt.loc[yday]['hi'],
-            'lo': dfmkt.loc[yday]['lo'],
+            'high': dfmkt.loc[yday]['high'],
+            'low': dfmkt.loc[yday]['low'],
             'close': dfmkt.loc[yday]['close']}
 
 

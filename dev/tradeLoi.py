@@ -41,38 +41,43 @@ def getLoiFromPast(date, loi_option):
     if loi_option == 'yday_close':
         loi = util.getYdayOHLC(date)['close']
     elif loi_option == 'yday_hi':
-        loi = util.getYdayOHLC(date)['hi']
+        loi = util.getYdayOHLC(date)['high']
     elif loi_option == 'yday_lo':
-        loi = util.getYdayOHLC(date)['lo']
+        loi = util.getYdayOHLC(date)['low']
     elif loi_option == 'yday_open':
         loi = util.getYdayOHLC(date)['open']
     elif loi_option == '2day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 2)['hi']
+        loi = util.getNdayOHLC(yday, 2)['high']
     elif loi_option == '2day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 2)['lo']
+        loi = util.getNdayOHLC(yday, 2)['low']
     elif loi_option == '3day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 3)['hi']
+        loi = util.getNdayOHLC(yday, 3)['high']
     elif loi_option == '3day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 3)['lo']
+        loi = util.getNdayOHLC(yday, 3)['low']
     elif loi_option == '5day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 5)['hi']
+        loi = util.getNdayOHLC(yday, 5)['high']
     elif loi_option == '5day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 5)['lo']
+        loi = util.getNdayOHLC(yday, 5)['low']
     elif loi_option == '10day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 10)['hi']
+        loi = util.getNdayOHLC(yday, 10)['high']
     elif loi_option == '10day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 10)['lo']
-        
+        loi = util.getNdayOHLC(yday, 10)['low']
+    elif loi_option == '20day_hi':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 20)['high']
+    elif loi_option == '20day_lo':
+        yday = util.date_offset(date, -1)
+        loi = util.getNdayOHLC(yday, 20)['low']
     else:
-        print("Wrong LOI option!!")
+        raise ValueError("Wrong LOI option!!")
         
     return loi
 
@@ -109,7 +114,7 @@ def plotSingleLoi(tradeLoi_result):
 
 
 
-def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", execution="adjusted", margin=1.0):
+def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", execution="adjusted", margin=1.0):
     """
     Parameters
     ----------
@@ -144,7 +149,7 @@ def tradeLoi(date, loi_option='open', vol_option='lktb50vol', plot="N", executio
     
     #loi_option에 따라 loi 설정, loi_option이 과거일 경우 함수호출
     if loi_option == 'open':
-        loi = dfmkt.iloc[0]['open']
+        loi = dfmkt.iloc[0]['close']
     else:
         loi = getLoiFromPast(date, loi_option)
     
@@ -266,7 +271,7 @@ def crossTest(ema_fast, ema_slow, margin=0.5):
     
     
 
-def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted",
+def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
              fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
     """
     tradeEma는 장중 한방향 트렌드가 지속될 때 많은 수익을 추구
@@ -323,8 +328,8 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted",
     signal_before = 0 
     
     #ema_fast, ema_slow 시작점 정의, ema는 dfmkt에 저장한다
-    dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'open']
-    dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'open']
+    dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'close']
+    dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'close']
     
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
@@ -349,32 +354,35 @@ def tradeEma(date, vol_option='lktb50vol', plot="N", execution="adjusted",
         
         tested_status = crossTest(dfmkt.at[dti_now, 'ema_fast'], dfmkt.at[dti_now, 'ema_slow'], margin=margin)
         
-        if (prev_status == "above" or prev_status == "below") and tested_status == "attached":
-            prev_status = tested_status
-        
-        elif prev_status == tested_status:
-            pass
-        
-        #below -> above or above -> below or attahced -> above/below
-        else: 
-            # print(prev_status, tested_status)
-            prev_status = tested_status
+        #slow ema 형성시까지(=slow ema가 적정수량이 생길때까지 signal 발생 보류
+        if (dfmkt.ema_slow.count() > 1 / slow_coeff):
+            if (prev_status == "above" or prev_status == "below") and tested_status == "attached":
+                prev_status = tested_status
             
-            signal_now = 1 if tested_status == "above" else -1
+            elif prev_status == tested_status:
+                pass
             
-            if signal_before != signal_now : #이 경우에만 시그널 발생
-                # print("signal detected : ", signal_now)
-                df_result.at[dti_now, 'direction'] = signal_now
-                signal_before = signal_now
+            #below -> above or above -> below or attahced -> above/below
+            else: 
+                # print(prev_status, tested_status)
+                prev_status = tested_status
                 
-                #timedelta --> datetime.time형식으로 변환
-                df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                signal_now = 1 if tested_status == "above" else -1
+                
+                #!!!이 경우에만 시그널 발생
+                if signal_before != signal_now: 
+                    # print("signal detected : ", signal_now)
+                    df_result.at[dti_now, 'direction'] = signal_now
+                    signal_before = signal_now
                     
-                df_result.at[dti_now, 'signal_vwap'] = vwap
-                df_result.at[dti_now, 'price'] = 'TBD'
-                df_result.at[dti_now, 'ema_fast'] = dfmkt.at[dti_now, 'ema_fast']
-                df_result.at[dti_now, 'ema_slow'] = dfmkt.at[dti_now, 'ema_slow']
-                df_result.at[dti_now, 'local_index'] = dti_now
+                    #timedelta --> datetime.time형식으로 변환
+                    df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                        
+                    df_result.at[dti_now, 'signal_vwap'] = vwap
+                    df_result.at[dti_now, 'price'] = 'TBD'
+                    df_result.at[dti_now, 'ema_fast'] = dfmkt.at[dti_now, 'ema_fast']
+                    df_result.at[dti_now, 'ema_slow'] = dfmkt.at[dti_now, 'ema_slow']
+                    df_result.at[dti_now, 'local_index'] = dti_now
     """index기준 test loop종료"""       
     
     """NA제거"""
@@ -404,7 +412,7 @@ def plotSingleMA(tradeEma_result):
     """임시 플로팅 함수로 사용"""
     df_result = tradeEma_result['df']
     df_result.index = df_result.local_index
-    df = tradeEma_result['dfmkt']
+    dfmkt = tradeEma_result['dfmkt']
 
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(1,1,1)
@@ -415,9 +423,9 @@ def plotSingleMA(tradeEma_result):
         x = result_i
         y = df_result.loc[result_i]['price']
         ax.scatter(x, y, color=color, marker=marker, s=300)
-    plt.plot(df.index, df['price'])
-    plt.plot(df.index, df['ema_fast'])
-    plt.plot(df.index, df['ema_slow'])
+    plt.plot(dfmkt.index, dfmkt['close'])
+    plt.plot(dfmkt.index, dfmkt['ema_fast'])
+    plt.plot(dfmkt.index, dfmkt['ema_slow'])
     
     # Set plot name as xlabel
     font = {'family': 'verdana',
@@ -478,7 +486,7 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
     date = r['dfmkt']['date'][0]
     
     #시간대별 PL을 알아보기 위한 기초 시장 DATA 
-    df1min = util.setDfData(date, date, '`lktb1min`', datetime_col="Y")
+    df1min = util.setDfData(date, date, '`lktbf_min`', datetime_col="Y")
     
     #시간대별 PL을 정리하기 위한 dataframe
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
@@ -497,9 +505,9 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
         # std = 
         
         #손절조건검토
-        # if losscut == "Y" and pl < -10 and t.time() > datetime.time(12,0) :
+        if losscut == "Y" and pl < -10 and t.time() > datetime.time(12,0) :
         # if losscut == "Y"   :
-            # break
+            break
     
     df.dropna(inplace=True)
         
@@ -527,22 +535,24 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
 
 def main():
     
-    print("Running main function")
+    print("Running main function\n")
     
     #일봉기준 전체 date list
-    ld = list(util.getDailyOHLC().index)
-    # ld = [datetime.date(2017,12,20)]
+    ld = list(util.getDailyOHLC().index)[:-26]
+    # ld = [d for d in ld if d.year==2021 and d.month==3]
+    # ld = [d for d in ld if d.year==2021 ]
+    # ld = [datetime.date(2017,12,26)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'lktb50vol', plot="N", execution="vwap", 
+        result_ema = tradeEma(day, 'lktbf50vol', plot="N", execution="vwap", 
                               fast_coeff=0.3,
-                              slow_coeff=0.05,
-                              margin = 1.0)
+                              slow_coeff=0.07,
+                              margin = 0.7)
         
-        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="N")
+        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y")
         
         dfpl.at[i, 'date'] = day
         
@@ -555,15 +565,17 @@ def main():
         trade_ended_at = str(timelyPl.index[-1])[-8:]
         
         #당일의 결과
-        # print(day, "    ", pl_of_the_day, str(timelyPl.index[-1])[-8:])
-        print(f'{day}    pl={pl_of_the_day},  {trade_ended_at},   {num_trade}')
+        #print(day, "    ", pl_of_the_day, str(timelyPl.index[-1])[-8:])
+        print(f'Day   | {day}    pl= {pl_of_the_day},  {trade_ended_at},   {num_trade}')
         
         #누적결과
-        print(round(dfpl.pl.sum(), 1), 
-              round(dfpl.pl.mean(), 2), 
-              round(dfpl.pl.std(), 2),
-              round(dfpl.num_trade.mean(), 1), "trades/day",
-              "\n=====================================")
+        cumsum = round(dfpl.pl.sum(), 1)
+        mean = round(dfpl.pl.mean(), 2)
+        std = round(dfpl.pl.std(), 2)
+        sr = round(mean / std, 2)
+        num_trade_avg = round(dfpl.num_trade.mean(), 1)
+        print(f'Cumul | cumsum: {cumsum}  mean:{mean}   SR: {sr}   trades/day: {num_trade_avg}',
+              "\n---------------------------------------------------------------")
     
     dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
     
