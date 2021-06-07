@@ -248,7 +248,180 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
     
     return result
 
+def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi_redundancy_margin=10):
+    """
+    Parameters
+    ----------
+    date : datetime.date
+        테스트하고자 하는 날짜
+    loi_option : str
+        'open', 'yday_close', 'yday_hi', 'yday_lo', 'yday_open'
+        '2day_hi', '2day_lo', '3day_hi', '3day_lo',......
+        
+    vol_option : str
+        몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
 
+    Returns
+    -------
+    {'df': df_result,
+     'loi_option': loi_option
+     'loi': loi
+     'dfmkt': 시장data
+     }
+        df_result
+            trade_time : pd.Timestamp
+            direction : +1 or -1
+            price : 매매가 일어난 가격
+        loi_option
+    """
+    
+    #테스트를 위한 해당일의 시장 data load
+    dfmkt = util.setDfData(date, date, vol_option)
+    
+    
+    """사전정의된 loi_option에 따라 여러개의 loi를 사전 설정"""
+    loi_list = ['open',
+                'yday_close', 'yday_hi', 'yday_lo', 'yday_open', 
+                '2day_hi', '2day_lo',
+                '3day_hi', '3day_lo', 
+                '5day_hi', '5day_lo',
+                '10day_hi', '10day_lo',
+                '20day_hi', '20day_lo',]
+    
+    df_loi = pd.DataFrame(index=loi_list, columns=['value', 'margin'])
+    df_loi.index.name = 'loi_name'
+
+    for loi_option in loi_list:
+        if loi_option == 'open':
+            df_loi.at[loi_option, 'value'] = dfmkt.iloc[0]['close']
+        else:
+            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option)
+    
+    df_loi.sort_values(by='value', ascending=False, inplace=True)
+    
+    #중복 또는 근접으로 지워질 loi 옵션들
+    rm_opt = []
+    for i,opt in enumerate(df_loi.index):
+        for j,opt2 in enumerate(df_loi.index): 
+            if i < j and abs(df_loi.at[opt, 'value'] - df_loi.at[opt2,'value']) < loi_redundancy_margin/100:
+                rm_opt.append(opt2)
+    
+    rm_opt = list(set(rm_opt))            
+    
+    df_loi.drop(rm_opt, inplace=True)
+    
+    
+    #temp values
+    loi = df_loi.at['open', 'value']
+    margin = 3
+    
+    dti = dfmkt.index
+    
+    #결과를 담는 df 정의
+    df_result = pd.DataFrame(index = dti, 
+                             columns=['loi',
+                                      'signal_time', 
+                                      'direction', 
+                                      'signal_vwap', 
+                                      'trade_time', 
+                                      'price',
+                                      'local_index'])
+    
+    #range 안 또는 밖의 상태를 저장
+    range_status_prev = "out_of_range"
+    
+    #현재의 signal 상태를 저장
+    signal_before = 0 
+    signal_before_at = dfmkt.at[dti[0], 'time']
+    
+    
+    
+    """vwap index기준 test loop시작"""
+    for dti_pre, dti_now in zip(dti, dti[1:]):
+        vwap = dfmkt.loc[dti_now,'vwap']
+        
+        #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
+        #df_result의 dti_pre행을 indexing
+        if df_result.loc[dti_pre]['price'] == 'TBD':
+            df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+            
+            if execution =="adjusted":
+                ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+            elif execution == "vwap":
+                ent_price = vwap
+            else:
+                raise NameError('Wrong execution option')
+            df_result.at[dti_pre, 'price'] = ent_price
+        
+        
+        
+        range_status = rangeTest(vwap, loi, margin)
+        
+        #LOI 레인지 밖에서 안으로 들어온 경우 
+        if range_status_prev == "out_of_range" and range_status == "within_range":
+            range_status_prev = range_status
+            
+        elif range_status_prev == "out_of_range" and range_status == "out_of_range":
+            pass
+        
+        elif range_status_prev == "within_range" and range_status == "within_range":
+            pass
+        
+        #LOI 레인지 안에서 밖으로 나가는 경우 --> signal 발생
+        elif range_status_prev == "within_range" and range_status == "out_of_range":
+            range_status_prev = range_status
+            
+            #1은 LOI 레인지 상향돌파, vice versa
+            signal_now = 1 if vwap > loi else -1
+            signal_now_at = dfmkt.at[dti_now, 'time']
+            
+            #이전시그널과 반대방향 또는 이전시그널발생후 30분이 지났을 때
+            if (signal_before != signal_now) or (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
+                    
+                df_result.at[dti_now, 'direction'] = signal_now
+                signal_before = signal_now
+                signal_before_at = signal_now_at
+                
+                df_result.at[dti_now, 'loi'] = loi
+                #timedelta --> datetime.time형식으로 변환
+                df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                
+                df_result.at[dti_now, 'signal_vwap'] = vwap
+                df_result.at[dti_now, 'price'] = 'TBD'
+                df_result.at[dti_now, 'local_index'] = dti_now
+        
+    """vwap index기준 test loop종료"""
+    
+    df_result.dropna(inplace=True)
+    
+
+    """결과1차정리, PLOT을 위함"""
+    result = {'df' : df_result, 
+              'loi_option': loi_option, 
+              'loi': loi,
+              'dfmkt': dfmkt,
+              'margin': margin
+              }
+    
+    """"결과PLOT"""    
+    if plot == "Y":
+        plotSingleLoi(result)
+
+    """"결과정리"""    
+    result['df'].index = result['df'].trade_time
+    result['df'].index.name = 'index'
+        
+    # result['df'].drop(columns='trade_time', inplace=True)
+    
+    return result
+
+#%% Multi LOI Dev
+date = datetime.date(2021,5,28)
+rrr = tradeMultiLoi(date)
+
+
+
+#%%EMA
 
 def crossTest(ema_fast, ema_slow, margin=0.5):
     """
@@ -356,6 +529,7 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
         
         #slow ema 형성시까지(=slow ema가 적정수량이 생길때까지 signal 발생 보류
         if (dfmkt.ema_slow.count() > 1 / slow_coeff):
+            
             if (prev_status == "above" or prev_status == "below") and tested_status == "attached":
                 prev_status = tested_status
             
@@ -491,6 +665,8 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
     #시간대별 PL을 정리하기 위한 dataframe
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
     
+    pl0930 = pl1000 = pl1030 = pl1100 = pl1130 = pl1400 = 9999
+    
     for t in df.index:
         #ts: til now signal table
         ts = sig[:t]
@@ -502,11 +678,21 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
         num_trade = ts.amt.sum()
         df.at[t, 'num_trade'] = num_trade
         
-        # std = 
+        if t.time() == datetime.time(9,30):
+            pl0930 = pl
+        elif t.time() ==datetime.time(10,00):
+            pl1000 = pl
+        elif t.time() ==datetime.time(10,30):
+            pl1030 = pl
+        elif t.time() ==datetime.time(11,00):
+            pl1100 = pl
+        elif t.time() ==datetime.time(11,30):
+            pl1130 = pl
+        elif t.time() ==datetime.time(14,00):
+            pl1400 = pl
         
         #손절조건검토
-        if losscut == "Y" and pl < -10 and t.time() > datetime.time(12,0) :
-        # if losscut == "Y"   :
+        if losscut == "Y" and pl < -10 and (pl1000 > pl1100 > pl1400) and t.time() < datetime.time(14,5) :
             break
     
     df.dropna(inplace=True)
@@ -526,63 +712,8 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
     
     return dfpl
 
-#!!! 장 시작 후 EMA가 어느정도 형성된 후에 signal 접수
 
     
     
-
-#%% MAIN 실행 영역
-
-def main():
-    
-    print("Running main function\n")
-    
-    #일봉기준 전체 date list
-    ld = list(util.getDailyOHLC().index)[:-26]
-    # ld = [d for d in ld if d.year==2021 and d.month==3]
-    # ld = [d for d in ld if d.year==2021 ]
-    # ld = [datetime.date(2017,12,26)]
-    
-    #일간 PL을 기록하는 dataframe
-    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
-    
-    for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'lktbf50vol', plot="N", execution="vwap", 
-                              fast_coeff=0.3,
-                              slow_coeff=0.07,
-                              margin = 0.7)
-        
-        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y")
-        
-        dfpl.at[i, 'date'] = day
-        
-        pl_of_the_day = round(timelyPl.pl[-1], 2)
-        dfpl.at[i, 'pl'] = pl_of_the_day
-        
-        num_trade = timelyPl.num_trade[-1]
-        dfpl.at[i, 'num_trade'] = num_trade
-        
-        trade_ended_at = str(timelyPl.index[-1])[-8:]
-        
-        #당일의 결과
-        #print(day, "    ", pl_of_the_day, str(timelyPl.index[-1])[-8:])
-        print(f'Day   | {day}    pl= {pl_of_the_day},  {trade_ended_at},   {num_trade}')
-        
-        #누적결과
-        cumsum = round(dfpl.pl.sum(), 1)
-        mean = round(dfpl.pl.mean(), 2)
-        std = round(dfpl.pl.std(), 2)
-        sr = round(mean / std, 2)
-        num_trade_avg = round(dfpl.num_trade.mean(), 1)
-        print(f'Cumul | cumsum: {cumsum}  mean:{mean}   SR: {sr}   trades/day: {num_trade_avg}',
-              "\n---------------------------------------------------------------")
-    
-    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    
-    return dfpl
-
-if __name__ == "__main__":
-    dfpl = main()
-
 
 
