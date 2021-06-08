@@ -13,6 +13,12 @@ test_db = pymysql.connect(user='admin',
 
 cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
+def getDate(table):
+    sql ="SELECT date FROM "+table+";"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return pd.DataFrame(result)
+
 def setDfData(date_start, date_end, table) :
     sql = "SELECT * FROM "+ table+" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
     cursor.execute(sql)
@@ -23,16 +29,16 @@ def insertExcelData(cursor, df, table):
 
     for i in range(len(df.index)) :
         date = str(df.iloc[i,0])
-        time = str(df.iloc[i,1])[7:]
+        time = str(df.iloc[i,1])
         vwap = str(df.iloc[i,2])
         close = str(df.iloc[i,3])
-        sql = "insert into "+table+" (date, time, ,vwap, close) values ('"  + date + "','" + time + "','"+ vwap + "','" + close +"'" + ');'
+        sql = "insert into "+table+" (date, time, vwap, close) values ('"  + date + "','" + time + "','"+ vwap + "','" + close +"'" + ');'
         cursor.execute(sql)
     test_db.commit()
 
 def parseVolandCommit(dftick, vol_bin, table):
     
-    dfbinned = pd.DataFrame(columns=['date','time','vwap','price','open','high','low'])
+    dfbinned = pd.DataFrame(columns=['date','time','vwap','price'])
     
     vol_list = []
     prc_list = []
@@ -71,12 +77,34 @@ def parseVolandCommit(dftick, vol_bin, table):
 
 
 
-# start_date = str(datetime.datetime.today())[:10]
-# end_date = str(datetime.datetime.today())[:10]
+# for y in [2019, 2020, 2021]:
+#     for m in range(1,13):
+#         if y == 2021 and m >=6:
+#             break
+#         else: 
+#             start_date = datetime.date(y,m,1)
+#             if m ==12: 
+#                 end_date = datetime.date(y+1,1,1) - datetime.timedelta(days=1)
+#             else:
+#                 end_date = datetime.date(y,m+1,1) - datetime.timedelta(days=1)
+#         vol_option='usdkrwtick'
+#         dftick = setDfData(start_date, end_date, vol_option)
+#         parseVolandCommit(dftick, 100, 'usdkrw100vol')
 
-start_date = datetime.date(1999,1,1)
-end_date = datetime.date(2021,6,4)
+# a = getDate('ktbf_day')
+# b = list(set(a['date']))
+# b.sort()
+# for i in b:
+#     start_date = i
+#     end_date = i
+#     vol_option='ktbftick'
+#     dftick = setDfData(start_date, end_date, vol_option)
+#     parseVolandCommit(dftick, 100, 'ktbf100vol')
 
+start_date = str(datetime.datetime.today())[:10]
+end_date = str(datetime.datetime.today())[:10]
+
+        
 """ 10년국채 선물 50vol"""
 vol_option='lktbftick'
 dftick = setDfData(start_date, end_date, vol_option)
@@ -92,7 +120,23 @@ vol_option='lktbftick'
 dftick = setDfData(start_date, end_date, vol_option)
 parseVolandCommit(dftick, 200, 'lktbf200vol')
 
-start_date = datetime.date(2017,9,19)
+
+""" 달러원 선물 100vol"""
+vol_option='usdkrwtick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 100, 'usdkrw100vol')
+
+""" 달러원 선물 200vol"""
+vol_option='usdkrwtick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 200, 'usdkrw200vol')
+
+""" 달러원 선물 300vol"""
+vol_option='usdkrwtick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 300, 'usdkrw300vol')
+
+
 
 """ 3년국채 선물 100vol"""
 vol_option='ktbftick'
@@ -110,20 +154,4 @@ dftick = setDfData(start_date, end_date, vol_option)
 parseVolandCommit(dftick, 300, 'ktbf300vol')
 
 
-start_date = datetime.date(2018,3,31)
-
-""" 달러원 선물 100vol"""
-vol_option='usdkrwtick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 100, 'usdkrw100vol')
-
-""" 달러원 선물 200vol"""
-vol_option='usdkrwtick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 200, 'usdkrw200vol')
-
-""" 달러원 선물 300vol"""
-vol_option='usdkrwtick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 300, 'usdkrw300vol')
 
