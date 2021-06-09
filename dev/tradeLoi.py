@@ -251,7 +251,8 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
 
 
 
-def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi_redundancy_margin=15):
+def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap",
+                  loi_redundancy_margin=10):
     """
     Parameters
     ----------
@@ -298,16 +299,23 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
         else:
             df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option)
     
-    df_loi.sort_values(by='value', ascending=False, inplace=True)
+    # df_loi.sort_values(by='value', ascending=False, inplace=True)
     
     #중복 또는 근접으로 지워질 loi 옵션들
     rm_opt = []
     for i,opt in enumerate(df_loi.index):
         for j,opt2 in enumerate(df_loi.index): 
-            if i < j and abs(df_loi.at[opt, 'value'] - df_loi.at[opt2,'value']) < loi_redundancy_margin/100:
+            if i < j and abs(df_loi.at[opt, 'value'] - df_loi.at[opt2,'value']) < loi_redundancy_margin/100 :
                 rm_opt.append(opt2 if opt2 != 'open' else opt)
+                # rm_opt.append(opt2 if opt2 != 'open' else opt)
+    
+    
     
     rm_opt = list(set(rm_opt))            
+    
+    rm_loi = pd.DataFrame(columns=['value'])
+    for opt in rm_opt :
+        rm_loi.loc[opt,'value'] = df_loi.at[opt,'value']
     
     df_loi.drop(rm_opt, inplace=True)
     
@@ -315,7 +323,7 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     
     #loi별 margin 설정, 시가에서 멀수록 margin을 넉넉히 설정하여 스쳐도 시그널 나오도록 한다
     #최소 마진은 1.5틱으로 설정
-    df_loi['margin'] = [max(1.5, 100*x) for x in 0.1*df_loi['open_distance'].abs()]
+    df_loi['margin'] = [max(1.5, 100*x) for x in 0.15*df_loi['open_distance'].abs()]
     
     
     #결과를 담는 df 정의
@@ -411,6 +419,7 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     result = {'df' : df_result, 
               'df_loi': df_loi, 
               'dfmkt': dfmkt,
+              'rm_loi':rm_loi
               }
     
     """"결과PLOT"""    
@@ -420,6 +429,7 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     """"결과정리"""    
     result['df'].index = result['df'].trade_time
     result['df'].index.name = 'index'
+    result['df_rmloi'] =rm_loi
         
     # result['df'].drop(columns='trade_time', inplace=True)
     
@@ -445,15 +455,45 @@ def calPlMultiLoi(result_MultiLoi):
     
     return date, day_pl_sum, day_signal_count
 
-
+""" tradeMultiLoi의 결과를 param으로 넣어주면 pl table을 계산한다 """
+def calDailyPlLoi(result):
+    df=result['df']
+    close = result['dfmkt'].iloc[-1]['close']
+    dti = df.index
+    df_pl = pd.DataFrame(index=dti, columns=['loi_name','direction','close', 'price','amt','pl'])
+    for i,dt in enumerate(dti) :
+        amt = 1
+        if i != 0:
+            amt = 0 if df.iloc[i]['direction'] == df.iloc[i-1]['direction'] else 2
+        direction = df.iloc[i]['direction']
+        price = df.iloc[i]['price']
+        pl = (close - price)*direction*amt*100
+        df_pl.loc[dt,'loi_name'] = df.iloc[i]['loi_name']
+        df_pl.loc[dt,'direction'] = direction
+        df_pl.loc[dt,'close'] = close
+        df_pl.loc[dt,'price'] = price
+        df_pl.loc[dt,'amt'] = amt
+        df_pl.loc[dt,'pl'] = pl
+    day = str(dti[0])[:11]
+    pl_of_the_day = round(df_pl.pl.sum(),3)
+    num_trade = len(dti)
+    print(f'Day   | {day}    pl= {pl_of_the_day}, {num_trade}'
+      "\n---------------------------------------------------------------")
+    
+    return df_pl, pl_of_the_day, num_trade
+        
+    
 def plotMultiLoi(tradeLoi_result):
     """임시 플로팅 함수로 사용"""
     df_result = tradeLoi_result['df']
     df_result.index = df_result.local_index
-    loi_option = tradeLoi_result['loi_option']
+    # loi_option = tradeLoi_result['loi_option']
     df = tradeLoi_result['dfmkt']
-    loi = tradeLoi_result['loi']
-
+    # loi = tradeLoi_result['loi']
+    loi = tradeLoi_result['df_loi']['value']
+    rmloi = tradeLoi_result['rm_loi']['value']
+    margin = tradeLoi_result['df_loi']['margin']
+    
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(1,1,1)
     
@@ -468,9 +508,16 @@ def plotMultiLoi(tradeLoi_result):
     loi 값들을 수평선으로 그음(loi[0] : opt, loi[1] : val)
     """
 
-    for i in range(len(loi[1])) :
-        plt.axhline(y=loi[1][i], linewidth=1, color="blue")
-        plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
+    for i in range(len(loi)):
+        plt.axhline(y=loi[i], linewidth=1, color="blue")
+        plt.text(df_result.index[-1], loi[i], str(loi[i])+" / "+str(loi.index[i] + " / "+str(round(margin[i],2))), color="blue")
+        
+    for i in range(len(rmloi)):
+        plt.axhline(y=rmloi[i], linewidth=1, color="gray")
+        plt.text(0, rmloi[i], str(rmloi[i])+" / "+str(rmloi.index[i]), color="gray")
+    # for i in range(len(loi[1])) :
+    #     plt.axhline(y=loi[1][i], linewidth=1, color="blue")
+    #     plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
     
     
     plt.plot(df.index, df['close'])
@@ -480,8 +527,10 @@ def plotMultiLoi(tradeLoi_result):
             'weight': 'bold',
             'size': 18,
             }
-    plot_name = '{0}: {1}, Margin: {2}'
-    plot_name = plot_name.format(loi_option, loi, tradeLoi_result['margin'])
+    # plot_name = '{0}: {1}, Margin: {2}'
+    # plot_name = '{0}: {1}'
+    # plot_name = plot_name.format(loi, tradeLoi_result['margin'])
+    plot_name = str(df.iloc[0]['date']) + '   ' + str(df.iloc[-1]['close'])
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
     pass
@@ -534,10 +583,22 @@ def showGraph(loi, rm_loi, result, plot_name="QP") :
     plt.show()
 
 #%%trade multi Loi 백테스트
-date = datetime.date(2021,6,4)
-r = tradeMultiLoi(date, plot="Y")
-
-
+date = datetime.date(2021,6,7)
+ld = list(util.getDailyOHLC().index)[20:]
+# ld = [d for d in ld if d.year==2021 and (d.month==5 or d.month==6)]
+# r = tradeMultiLoi(date, plot="Y")
+total = 0.00
+df_summary = pd.DataFrame(columns=['day_pl_sum', 'day_signal_cnt'])
+writer = pd.ExcelWriter("lktbf_loi_result.xlsx",engine="xlsxwriter")
+for i, day in enumerate(ld) :
+    r = tradeMultiLoi(day , plot="Y")
+    x, pl, cnt = calDailyPlLoi(r)
+    df_summary.loc[day,'day_pl_sum'] = pl
+    df_summary.loc[day,'day_signal_cnt'] = cnt
+    total += pl
+    print(total, "   ",total/(i+1))
+df_summary.to_excel(writer)
+writer.save()
 #%%EMA
 
 def crossTest(ema_fast, ema_slow, margin=0.5):

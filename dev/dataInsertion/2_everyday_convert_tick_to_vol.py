@@ -103,7 +103,6 @@ def parseVolandCommit(dftick, vol_bin, table):
 
 start_date = str(datetime.datetime.today())[:10]
 end_date = str(datetime.datetime.today())[:10]
-
         
 """ 10년국채 선물 50vol"""
 vol_option='lktbftick'
@@ -119,6 +118,22 @@ parseVolandCommit(dftick, 100, 'lktbf100vol')
 vol_option='lktbftick'
 dftick = setDfData(start_date, end_date, vol_option)
 parseVolandCommit(dftick, 200, 'lktbf200vol')
+
+
+""" 3년국채 선물 100vol"""
+vol_option='ktbftick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 100, 'ktbf100vol')
+
+""" 3년국채 선물 200vol"""
+vol_option='ktbftick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 200, 'ktbf200vol')
+
+""" 3년국채 선물 300vol"""
+vol_option='ktbftick'
+dftick = setDfData(start_date, end_date, vol_option)
+parseVolandCommit(dftick, 300, 'ktbf300vol')
 
 
 """ 달러원 선물 100vol"""
@@ -138,20 +153,6 @@ parseVolandCommit(dftick, 300, 'usdkrw300vol')
 
 
 
-""" 3년국채 선물 100vol"""
-vol_option='ktbftick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 100, 'ktbf100vol')
-
-""" 3년국채 선물 200vol"""
-vol_option='ktbftick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 200, 'ktbf200vol')
-
-""" 3년국채 선물 300vol"""
-vol_option='ktbftick'
-dftick = setDfData(start_date, end_date, vol_option)
-parseVolandCommit(dftick, 300, 'ktbf300vol')
 
 
 
