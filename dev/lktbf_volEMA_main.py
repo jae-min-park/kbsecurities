@@ -15,7 +15,7 @@ def main():
     # ld = list(util.getDailyOHLC().index)[:-26]
     # ld = [d for d in ld if d.year==2021 and d.month==3]
     # ld = [d for d in ld if d.year==2021 ]
-    ld = [datetime.date(2021,5,28)]
+    ld = [datetime.date(2021,6,4)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])

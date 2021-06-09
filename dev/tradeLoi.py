@@ -32,7 +32,8 @@ def rangeTest(vwap, loi, margin):
     else:
         where = "out_of_range"
     return where
-    
+
+
 def getLoiFromPast(date, loi_option):
     """
     loi_option이 오늘 이전인 경우, loi 설정
@@ -99,7 +100,7 @@ def plotSingleLoi(tradeLoi_result):
         x = result_i
         y = df_result.loc[result_i]['price']
         ax.scatter(x, y, color=color, marker=marker, s=200)
-    plt.plot(df.index, df['price'])
+    plt.plot(df.index, df['close'])
     # Set plot name as xlabel
     font = {'family': 'verdana',
             'color':  'darkblue',
@@ -248,7 +249,9 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
     
     return result
 
-def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi_redundancy_margin=10):
+
+
+def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi_redundancy_margin=15):
     """
     Parameters
     ----------
@@ -264,8 +267,6 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     Returns
     -------
     {'df': df_result,
-     'loi_option': loi_option
-     'loi': loi
      'dfmkt': 시장data
      }
         df_result
@@ -288,7 +289,7 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
                 '10day_hi', '10day_lo',
                 '20day_hi', '20day_lo',]
     
-    df_loi = pd.DataFrame(index=loi_list, columns=['value', 'margin'])
+    df_loi = pd.DataFrame(index=loi_list, columns=['value', 'open_distance','margin'])
     df_loi.index.name = 'loi_name'
 
     for loi_option in loi_list:
@@ -304,22 +305,24 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     for i,opt in enumerate(df_loi.index):
         for j,opt2 in enumerate(df_loi.index): 
             if i < j and abs(df_loi.at[opt, 'value'] - df_loi.at[opt2,'value']) < loi_redundancy_margin/100:
-                rm_opt.append(opt2)
+                rm_opt.append(opt2 if opt2 != 'open' else opt)
     
     rm_opt = list(set(rm_opt))            
     
     df_loi.drop(rm_opt, inplace=True)
     
+    df_loi['open_distance'] = df_loi['value'] - df_loi.at['open', 'value']
     
-    #temp values
-    loi = df_loi.at['open', 'value']
-    margin = 3
+    #loi별 margin 설정, 시가에서 멀수록 margin을 넉넉히 설정하여 스쳐도 시그널 나오도록 한다
+    #최소 마진은 1.5틱으로 설정
+    df_loi['margin'] = [max(1.5, 100*x) for x in 0.1*df_loi['open_distance'].abs()]
     
-    dti = dfmkt.index
     
     #결과를 담는 df 정의
+    dti = dfmkt.index
     df_result = pd.DataFrame(index = dti, 
-                             columns=['loi',
+                             columns=['loi_name',
+                                      'loi_value',
                                       'signal_time', 
                                       'direction', 
                                       'signal_vwap', 
@@ -335,10 +338,12 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     signal_before_at = dfmkt.at[dti[0], 'time']
     
     
-    
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
-        vwap = dfmkt.loc[dti_now,'vwap']
+        
+        #현재 loop에서 사용될 시장가격
+        vwap = dfmkt.loc[dti_now, 'vwap']
+        
         
         #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
         #df_result의 dti_pre행을 indexing
@@ -353,7 +358,12 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
                 raise NameError('Wrong execution option')
             df_result.at[dti_pre, 'price'] = ent_price
         
+        #현재가(=vwap) 기준 LOI 거리순으로 정렬한 Series
+        s_loi_dist = (df_loi['value']- vwap).abs().sort_values()
+        current_loi_name = s_loi_dist.index[0]
         
+        loi = df_loi.at[current_loi_name, 'value']
+        margin = df_loi.at[current_loi_name, 'margin']
         
         range_status = rangeTest(vwap, loi, margin)
         
@@ -378,6 +388,8 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
             #이전시그널과 반대방향 또는 이전시그널발생후 30분이 지났을 때
             if (signal_before != signal_now) or (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
                     
+                df_result.at[dti_now, 'loi_name'] = current_loi_name
+                df_result.at[dti_now, 'loi_value'] = loi
                 df_result.at[dti_now, 'direction'] = signal_now
                 signal_before = signal_now
                 signal_before_at = signal_now_at
@@ -397,15 +409,13 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
 
     """결과1차정리, PLOT을 위함"""
     result = {'df' : df_result, 
-              'loi_option': loi_option, 
-              'loi': loi,
+              'df_loi': df_loi, 
               'dfmkt': dfmkt,
-              'margin': margin
               }
     
     """"결과PLOT"""    
     if plot == "Y":
-        plotSingleLoi(result)
+        plotMultiLoi(result)
 
     """"결과정리"""    
     result['df'].index = result['df'].trade_time
@@ -415,10 +425,117 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap", loi
     
     return result
 
-#%% Multi LOI Dev
-date = datetime.date(2021,5,28)
-rrr = tradeMultiLoi(date)
 
+def calPlMultiLoi(result_MultiLoi):
+    """단순 종가기준 PL만 산출"""
+    df_trade = result_MultiLoi['df']
+
+    close_price = result_MultiLoi['dfmkt'].iloc[-1]['price']
+    
+    df_trade['amt'] = 2
+    df_trade.at[df_trade.index[0], 'amt'] = 1
+    df_trade['pl'] = 100 * df_trade.direction * df_trade.amt * (close_price - df_trade.price)
+    #!!! stop-out loss 
+    
+    
+    date = str(df_trade.index[0].date())
+    day_pl_sum = round(df_trade['pl'].sum(), 1)
+    day_signal_count = df_trade['pl'].count()
+    print(date, day_pl_sum, day_signal_count)
+    
+    return date, day_pl_sum, day_signal_count
+
+
+def plotMultiLoi(tradeLoi_result):
+    """임시 플로팅 함수로 사용"""
+    df_result = tradeLoi_result['df']
+    df_result.index = df_result.local_index
+    loi_option = tradeLoi_result['loi_option']
+    df = tradeLoi_result['dfmkt']
+    loi = tradeLoi_result['loi']
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(1,1,1)
+    
+    for result_i in df_result.index:
+        marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
+        color = "tab:red" if marker == "^" else "b"
+        x = result_i
+        y = df_result.loc[result_i]['price']
+        ax.scatter(x, y, color=color, marker=marker, s=200)
+    
+    """
+    loi 값들을 수평선으로 그음(loi[0] : opt, loi[1] : val)
+    """
+
+    for i in range(len(loi[1])) :
+        plt.axhline(y=loi[1][i], linewidth=1, color="blue")
+        plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
+    
+    
+    plt.plot(df.index, df['close'])
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 18,
+            }
+    plot_name = '{0}: {1}, Margin: {2}'
+    plot_name = plot_name.format(loi_option, loi, tradeLoi_result['margin'])
+    ax.set_xlabel(plot_name, fontdict=font)
+    plt.show()
+    pass
+          
+def showGraph(loi, rm_loi, result, plot_name="QP") :
+    fig = plt.figure(figsize=(10,10))
+    ax = fig.add_subplot(1,1,1)
+    x=[]
+    time = tick_df['time']
+    for i in time:
+        x.append(str(i)[7:])
+    y = tick_df['close']
+    
+    """
+    x축(시간) 값들을 잘 보이도록 개수 및 각도 조정
+    """
+    ax.plot(x,y)
+    plt.xticks(ticks=x, rotation=30)
+    plt.locator_params(axis='x', nbins=len(x)/500)
+    
+    """
+    loi 값들을 수평선으로 그음(loi[0] : opt, loi[1] : val)
+    """
+    for i in range(len(rm_loi[1])) :
+        plt.axhline(y=rm_loi[1][i], linewidth=1,color="grey")
+        plt.text(0, rm_loi[1][i], rm_loi[0][i], color="gray")
+
+    for i in range(len(loi[1])) :
+        plt.axhline(y=loi[1][i], linewidth=1, color="blue")
+        plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
+   
+    """
+    마커를 플로팅함
+    """
+    for i in result.index:
+        marker = "^" if result.loc[i]['direction'] == 1 else "v"
+        color = "tab:red" if marker == "^" else "b"
+        x = str(i)[11:]
+        y = result.loc[i]['price']
+        ax.scatter(x, y, color=color, marker=marker, s=100) #s=마커사이즈
+    
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 10,
+            }
+    
+    ax.set_xlabel(plot_name, fontdict=font)
+    plt.show()
+
+#%%trade multi Loi 백테스트
+date = datetime.date(2021,6,4)
+r = tradeMultiLoi(date, plot="Y")
 
 
 #%%EMA
@@ -634,6 +751,8 @@ def calPlEma(result_ema):
     print(date, day_pl_sum, day_signal_count)
     
     return date, day_pl_sum, day_signal_count
+
+
 
 def calPlEma_wlossCut(result_ema):
     """daytrader를 가정하고 PL에 따른 손절 실행"""
