@@ -12,18 +12,18 @@ def main():
     print("Running main function\n")
     
     #일봉기준 전체 date list
-    # ld = list(util.getDailyOHLC().index)[:-26]
-    # ld = [d for d in ld if d.year==2021 and d.month==3]
+    # ld = list(util.getDailyOHLC().index)
+    # ld = [d for d in ld if d.year==2020 ]
     # ld = [d for d in ld if d.year==2021 ]
-    ld = [datetime.date(2021,6,4)]
+    ld = [datetime.date(2021,6,9)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
         result_ema = tradeEma(day, 'lktbf50vol', plot="Y", execution="vwap", 
-                              fast_coeff=0.2,
-                              slow_coeff=0.01,
+                              fast_coeff=0.3,
+                              slow_coeff=0.02,
                               margin = 0.5)
         
         timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y")
