@@ -49,11 +49,13 @@ def getDateList(table):
     li = sorted(list(set(df['date'])))
     return li
 
-def getDailyOHLC():
+def getDailyOHLC(start_date='2000-10-01',
+                 end_date='2099-12-31',
+                 market_table_name='lktbf_day'):
     """
     returns : 일봉 dataframe
     """
-    df = setDfData('2000-10-01','2099-04-30', 'lktbf_day')
+    df = setDfData(start_date, end_date, market_table_name)
     df.index = df.date
     df = df.drop(columns='date')
     
@@ -98,7 +100,39 @@ def getYdayOHLC(today=datetime.date, dfmkt=None):
             'low': dfmkt.loc[yday]['low'],
             'close': dfmkt.loc[yday]['close']}
 
+def getNdayMovingAverage(today, n, option="close"):
+    """
 
+    Parameters
+    ----------
+    today : datetime.date
+        전일종가까지로 계산한 n일의 이동평균을 계산하기 위한 관찰일
+    n : 이동평균 window
+    option : 
+        "close" : 일반적인 이동평균가격
+        "volume" : 평균거래량
+        "hi_lo" : 고가저가 차이
+        "open_close" : 시가종가 차이 절대값
+        
+    Returns
+    -------
+    n_day_average = {option}의 관찰일 이전 n일 평균
+
+    """
+    ma_start_date = date_offset(today, -n)
+    df_daily = getDailyOHLC(ma_start_date, today)
+    
+    if option == "close":
+        ma = round(df_daily.close[:-1].mean(), 2)
+    elif option == "volume":
+        ma = int(df_daily.volume[:-1].mean())
+    elif option == "hi_lo":
+        ma = round((df_daily.high - df_daily.low)[:-1].mean(), 2)
+    elif option == "open_close":
+        ma = round((df_daily.close - df_daily.open).abs()[:-1].mean(), 2)
+    
+    return ma
+    
 def getPriceYdayMostTraded(dfmkt, today):
     
     """
