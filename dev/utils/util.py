@@ -61,7 +61,7 @@ def getDailyOHLC(start_date='2000-10-01',
     
     return df
 
-def getNdayOHLC(candle_end_date, n):
+def getNdayOHLC(candle_end_date, n, table='lktbf_day'):
     """
     candle_end_date를 포함한 n일의 OHLC를 구함
     Parameters
@@ -77,7 +77,7 @@ def getNdayOHLC(candle_end_date, n):
 
     """
     candle_start_date = date_offset(candle_end_date, -n+1)
-    df_ndays = setDfData(candle_start_date, candle_end_date, '`lktbf_day`')
+    df_ndays = setDfData(candle_start_date, candle_end_date, table)
     df_ndays.index = df_ndays.date
 
     return {'open': df_ndays.loc[candle_start_date]['open'],
