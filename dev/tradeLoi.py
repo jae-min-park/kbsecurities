@@ -36,49 +36,49 @@ def rangeTest(vwap, loi, margin):
     return where
 
 
-def getLoiFromPast(date, loi_option):
+def getLoiFromPast(date, loi_option, table):
     """
     loi_option이 오늘 이전인 경우, loi 설정
     """
     #loi_option에 따라 loi 설정
     if loi_option == 'yday_close':
-        loi = util.getYdayOHLC(date)['close']
+        loi = util.getYdayOHLC(date, table)['close']
     elif loi_option == 'yday_hi':
-        loi = util.getYdayOHLC(date)['high']
+        loi = util.getYdayOHLC(date, table)['high']
     elif loi_option == 'yday_lo':
-        loi = util.getYdayOHLC(date)['low']
+        loi = util.getYdayOHLC(date, table)['low']
     elif loi_option == 'yday_open':
-        loi = util.getYdayOHLC(date)['open']
+        loi = util.getYdayOHLC(date, table)['open']
     elif loi_option == '2day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 2)['high']
+        loi = util.getNdayOHLC(yday, 2, table)['high']
     elif loi_option == '2day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 2)['low']
+        loi = util.getNdayOHLC(yday, 2, table)['low']
     elif loi_option == '3day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 3)['high']
+        loi = util.getNdayOHLC(yday, 3, table)['high']
     elif loi_option == '3day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 3)['low']
+        loi = util.getNdayOHLC(yday, 3, table)['low']
     elif loi_option == '5day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 5)['high']
+        loi = util.getNdayOHLC(yday, 5, table)['high']
     elif loi_option == '5day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 5)['low']
+        loi = util.getNdayOHLC(yday, 5, table)['low']
     elif loi_option == '10day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 10)['high']
+        loi = util.getNdayOHLC(yday, 10, table)['high']
     elif loi_option == '10day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 10)['low']
+        loi = util.getNdayOHLC(yday, 10, table)['low']
     elif loi_option == '20day_hi':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 20)['high']
+        loi = util.getNdayOHLC(yday, 20, table)['high']
     elif loi_option == '20day_lo':
         yday = util.date_offset(date, -1)
-        loi = util.getNdayOHLC(yday, 20)['low']
+        loi = util.getNdayOHLC(yday, 20, table)['low']
     else:
         raise ValueError("Wrong LOI option!!")
         
@@ -129,7 +129,6 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
         
     vol_option : str
         몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
-
     Returns
     -------
     {'df': df_result,
@@ -154,7 +153,16 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
     if loi_option == 'open':
         loi = dfmkt.iloc[0]['close']
     else:
-        loi = getLoiFromPast(date, loi_option)
+        table = ''
+        if vol_option in ['lktbf50vol', 'lktbf100vol', 'lktbf200vol'] :
+            table = 'lktbf_day'
+        elif vol_option in ['ktbf100vol', 'ktbf200vol', 'lktbf300vol'] :
+            table = 'ktbf_day'
+        elif vol_option in ['usdkrw100vol', 'usdkrw200vol', 'usdkrw300vol'] :
+            table = 'usdkrw_day'
+        else :
+            print("error table")
+        loi = getLoiFromPast(date, loi_option, table)
     
     dti = dfmkt.index
     #결과를 담는 df 정의
@@ -290,7 +298,6 @@ def rangeTradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap"
         
     vol_option : str
         몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
-
     Returns
     -------
     {'df': df_result,
@@ -324,7 +331,16 @@ def rangeTradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap"
         if loi_option == 'open':
             df_loi.at[loi_option, 'value'] = dfmkt.iloc[0]['close']
         else:
-            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option)
+            table = ''
+            if vol_option in ['lktbf50vol', 'lktbf100vol', 'lktbf200vol'] :
+                table = 'lktbf_day'
+            elif vol_option in ['ktbf100vol', 'ktbf200vol', 'lktbf300vol'] :
+                table = 'ktbf_day'
+            elif vol_option in ['usdkrw100vol', 'usdkrw200vol', 'usdkrw300vol'] :
+                table = 'usdkrw_day'
+            else :
+                print("error table")
+            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option, table)
     
     # df_loi.sort_values(by='value', ascending=False, inplace=True)
     
@@ -412,7 +428,7 @@ def rangeTradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap"
         # 마지막 시간때 청산
         if dti_now == dti[-1]:
             pl = getPl(vwap, buy_price,amount)
-            if pl != 0:
+            if position != 'None':
                 if position == 'long':
                     writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], position, 'None', vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
                     point.extend([dti_now, vwap])
@@ -759,8 +775,19 @@ def plotRangeTradeMultiLoi(tradeLoi_result):
     plt.show()
     pass
 
-
-
+# """ tradeMultiLoi의 결과를 param으로 넣어주면 pl table을 계산한다 """
+# def calDailyPlRangeLoi(result, day):
+#     df=result['df']
+#     close = result['dfmkt'].iloc[-1]['close']
+#     dti = df.index
+#     df_pl = pd.DataFrame(index=dti, columns=['pl'])
+#     for i,dt in enumerate(dti) :
+#         df_pl.loc[dt,'pl'] = df.iloc[i]['pl']
+#     pl_of_the_day = round(df_pl.pl.sum(),3)
+#     num_trade = len(dti)
+#     print("---------------------------------------------------------------\n"
+#         f'Day   | {day}    pl= {pl_of_the_day}, {num_trade}')
+    
 
 def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap",
                   loi_redundancy_margin=10):
@@ -775,7 +802,6 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap",
         
     vol_option : str
         몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
-
     Returns
     -------
     {'df': df_result,
@@ -808,7 +834,16 @@ def tradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap",
         if loi_option == 'open':
             df_loi.at[loi_option, 'value'] = dfmkt.iloc[0]['close']
         else:
-            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option)
+            table = ''
+            if vol_option in ['lktbf50vol', 'lktbf100vol', 'lktbf200vol'] :
+                table = 'lktbf_day'
+            elif vol_option in ['ktbf100vol', 'ktbf200vol', 'lktbf300vol'] :
+                table = 'ktbf_day'
+            elif vol_option in ['usdkrw100vol', 'usdkrw200vol', 'usdkrw300vol'] :
+                table = 'usdkrw_day'
+            else :
+                print("error table")            
+            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option, table)
     
     # df_loi.sort_values(by='value', ascending=False, inplace=True)
     
@@ -1093,12 +1128,13 @@ def showGraph(loi, rm_loi, result, plot_name="QP") :
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
 
-#%%trade multi Loi 백테스트
-date = datetime.date(2018,2,7)
+# #%%trade multi Loi 백테스트
+# # date = datetime.date(2018,2,7)
 # ld = list(util.getDailyOHLC().index)[20:]
-# ld = [d for d in ld if d.year<=2021 and d.year >=2017]
-r = rangeTradeMultiLoi(date, plot="Y")
-total = 0.00
+# ld = [d for d in ld if d.year==2021 and d.month ==6]
+# # ld = [d for d in ld if d.year<=2021 and d.year >=2017]
+# # r = rangeTradeMultiLoi(date, plot="Y")
+# total = 0.00
 # df_summary = pd.DataFrame(columns=['day_pl_sum', 'day_signal_cnt'])
 # writer = pd.ExcelWriter("summary_range_multiloi.xlsx",engine="xlsxwriter")
 
@@ -1109,12 +1145,12 @@ total = 0.00
 #     df_summary.loc[day, 'day_pl_sum'] = daily_pl
 #     df_summary.loc[day, 'day_signal_cnt'] = trade_cnt
     
-    # x, pl, cnt = calDailyPlLoi(r)
-    # df_summary.loc[day,'day_pl_sum'] = pl
-    # df_summary.loc[day,'day_signal_cnt'] = cnt
-    # total += pl
-    # print(total, "   ",total/(i+1))
-# df_summary.to_excel(writer)
+#     # x, pl, cnt = calDailyPlLoi(r)
+#     # df_summary.loc[day,'day_pl_sum'] = pl
+#     # df_summary.loc[day,'day_signal_cnt'] = cnt
+#     # total += pl
+#     # print(total, "   ",total/(i+1))
+# # df_summary.to_excel(writer)
 # writer.save()
 #%%EMA
 
@@ -1158,7 +1194,6 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
         "vwap" --> dti_next의 vwap 그대로 활용
     
     fast_coeff, slow_coeff : ema용 Coefficient
-
     Returns
     -------
     result = {'df' : df_result, 
@@ -1408,9 +1443,3 @@ def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1
     # dfpl.resample('Y').sum()
     
     return dfpl
-
-
-    
-    
-
-
