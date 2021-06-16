@@ -86,12 +86,12 @@ def getNdayOHLC(candle_end_date, n, table='lktbf_day'):
             'close': df_ndays.loc[candle_end_date]['close']}
     
     
-def getYdayOHLC(today=datetime.date, dfmkt=None):
+def getYdayOHLC(today=datetime.date, table='lktbf_day', dfmkt=None):
     """
     returns : 전일 OHLC
     """
     if dfmkt == None:
-        dfmkt = getDailyOHLC()
+        dfmkt = getDailyOHLC(market_table_name=table)
     
     yday = date_offset(today, -1)
     
