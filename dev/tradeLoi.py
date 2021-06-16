@@ -4,6 +4,8 @@ import numpy as np
 import math
 import utils.util as util
 import datetime
+import os
+from tqdm import tqdm
 
 
 """
@@ -248,6 +250,515 @@ def tradeLoi(date, loi_option='open', vol_option='lktbf50vol', plot="N", executi
     # result['df'].drop(columns='trade_time', inplace=True)
     
     return result
+
+
+def lineDrawer(color,x1,y1,x2,y2) :
+    plt.scatter(x1,y1,color=color)
+    plt.scatter(x2,y2,color=color)
+    x = np.array([x1, x2])
+    y = np.array([y1, y2])
+    plt.plot(x,y, color=color,linewidth=4)
+
+def writeSummary(df_result, dti_now, time, pre_position, post_position, vwap, avg_price, amount, pl, local_index, nearest_loi_name, nearest_loi_val) :
+    df_result.loc[dti_now,'time'] = time
+    df_result.loc[dti_now,'pre_position'] = pre_position
+    df_result.loc[dti_now,'post_position'] = post_position
+    df_result.loc[dti_now,'vwap'] = vwap
+    df_result.loc[dti_now,'avg_price'] = avg_price
+    df_result.loc[dti_now,'left_amount'] = amount
+    df_result.loc[dti_now,'pl'] = pl
+    df_result.loc[dti_now,'local_index'] = local_index
+    df_result.loc[dti_now,'nearest_loi_name'] = nearest_loi_name
+    df_result.loc[dti_now,'nearest_loi_val'] = nearest_loi_val
+    # df_result.loc[dti_now,'ptlc'] = ptlc
+    
+    return df_result
+
+def getPl(vwap, buy_price, amt, direction=1) :
+    return round(amt*(vwap - buy_price)*direction,3)
+
+def rangeTradeMultiLoi(date, vol_option='lktbf50vol', plot="N", execution="vwap",
+                  loi_redundancy_margin=10, pt_margin=5, lc_margin=15, entry_margin=5, scale_entry=10):
+    """
+    Parameters
+    ----------
+    date : datetime.date
+        테스트하고자 하는 날짜
+    loi_option : str
+        'open', 'yday_close', 'yday_hi', 'yday_lo', 'yday_open'
+        '2day_hi', '2day_lo', '3day_hi', '3day_lo',......
+        
+    vol_option : str
+        몇개짜리 볼륨봉을 쓸 것인지 = DB의 table명과 동일하게
+
+    Returns
+    -------
+    {'df': df_result,
+     'dfmkt': 시장data
+     }
+        df_result
+            trade_time : pd.Timestamp
+            direction : +1 or -1
+            price : 매매가 일어난 가격
+        loi_option
+    """
+    
+    #테스트를 위한 해당일의 시장 data load
+    dfmkt = util.setDfData(date, date, vol_option)
+    
+    
+    """사전정의된 loi_option에 따라 여러개의 loi를 사전 설정"""
+    loi_list = ['open',
+                'yday_close', 'yday_hi', 'yday_lo', 'yday_open', 
+                '2day_hi', '2day_lo',
+                '3day_hi', '3day_lo', 
+                '5day_hi', '5day_lo',
+                '10day_hi', '10day_lo',
+                '20day_hi', '20day_lo',]
+    
+    df_loi = pd.DataFrame(index=loi_list, columns=['name','value', 'open_distance', 'abs_distance', 'margin'])
+    df_loi.index.name = 'loi_name'
+    df_loi['name']=df_loi.index
+
+    for loi_option in loi_list:
+        if loi_option == 'open':
+            df_loi.at[loi_option, 'value'] = dfmkt.iloc[0]['close']
+        else:
+            df_loi.at[loi_option, 'value'] = getLoiFromPast(date, loi_option)
+    
+    # df_loi.sort_values(by='value', ascending=False, inplace=True)
+    
+    #중복 또는 근접으로 지워질 loi 옵션들
+    rm_opt = []
+    for i,opt in enumerate(df_loi.index):
+        for j,opt2 in enumerate(df_loi.index): 
+            if i < j and abs(df_loi.at[opt, 'value'] - df_loi.at[opt2,'value']) < loi_redundancy_margin/100 :
+                rm_opt.append(opt2 if opt2 != 'open' else opt)
+                # rm_opt.append(opt2 if opt2 != 'open' else opt)
+    
+    
+    
+    rm_opt = list(set(rm_opt))            
+    
+    rm_loi = pd.DataFrame(columns=['value'])
+    for opt in rm_opt :
+        rm_loi.loc[opt,'value'] = df_loi.at[opt,'value']
+    
+    df_loi.drop(rm_opt, inplace=True)
+    
+    
+    #loi별 margin 설정, 시가에서 멀수록 margin을 넉넉히 설정하여 스쳐도 시그널 나오도록 한다
+    #최소 마진은 entry_margin으로 param설정
+    df_loi['margin'] = [max(entry_margin, 100*x) for x in 0.15*df_loi['open_distance'].abs()]
+    
+    
+    #결과를 담는 df 정의
+    dti = dfmkt.index
+    # df_result = pd.DataFrame(index = dti, 
+    #                          columns=['loi_name',
+    #                                   'loi_value',
+    #                                   'signal_time', 
+    #                                   'direction', 
+    #                                   'signal_vwap', 
+    #                                   'trade_time', 
+    #                                   'price',
+    #                                   'local_index'])
+    
+    # #range 안 또는 밖의 상태를 저장
+    # range_status_prev = "out_of_range"
+    
+    # #현재의 signal 상태를 저장
+    # signal_before = 0 
+    # signal_before_at = dfmkt.at[dti[0], 'time']
+    
+    
+        
+    pre_loi = ''
+    nearest_loi = ''
+    position = 'None'
+    position_taken = False
+    scale_traded = False
+    margin = 0.0
+    buy_price = 0.0
+    amount = 0
+    
+    points=[]
+    point = []
+    
+    cols = ['time','pre_position','post_position', 'vwap', 'avg_price', 'left_amount', 'pl', 'local_index', 'nearest_loi_name', 'nearest_loi_val']
+    df_result = pd.DataFrame(columns=cols)
+    
+    """vwap index기준 test loop시작"""
+    for dti_pre, dti_now in zip(dti, dti[1:]):
+        
+        #현재 loop에서 사용될 시장가격
+        vwap = dfmkt.loc[dti_now, 'vwap']
+        df_loi['open_distance'] = df_loi['value'] - vwap
+        df_loi['abs_distance'] = abs(df_loi['open_distance'])
+        df_loi = df_loi.sort_values('abs_distance')
+        
+        if position_taken :
+            nearest_loi = df_loi.iloc[0]
+            margin = df_loi.iloc[0]['margin']
+        else:
+            if df_loi.iloc[0]['name'] != 'open':
+                pre_loi = df_loi.loc['open']
+                nearest_loi = df_loi.iloc[0]
+            else :
+                pre_loi = df_loi.iloc[1]
+                nearest_loi = df_loi.iloc[1]
+            margin = df_loi.iloc[1]['margin']
+       
+        # 마지막 시간때 청산
+        if dti_now == dti[-1]:
+            pl = getPl(vwap, buy_price,amount)
+            if pl != 0:
+                if position == 'long':
+                    writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], position, 'None', vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                    point.extend([dti_now, vwap])
+                    param = ['red']
+                    param.extend(point)
+                    points.append(param)
+                    point = []
+                else :
+                    writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], position, 'None', vwap, buy_price, amount, -pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                    point.extend([dti_now, vwap])
+                    param = ['blue']
+                    param.extend(point)
+                    points.append(param)
+                    point = []
+        elif position == 'None':
+            # 처음 시작할때 가장 가까운 loi가 open이면 이를 우회하기 위해 두번째 가까운 loi를 nearest와 pre loi로 둔다
+            open_val = df_loi[df_loi['name']=='open']['value'][0]
+
+            if not position_taken and pre_loi['value'] == nearest_loi['value'] and open_val < nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100 :
+                position = 'long'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+            elif not position_taken and pre_loi['value'] == nearest_loi['value'] and open_val > nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100:
+                position = 'short'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount,-1)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+            # 거래 후에도 nearest loi가 바뀌지 않는다면 preloi와 nearest loi가 같게 된다. 이때 새로운 포지션 진입을 위한 코드    
+            elif position_taken and pre_loi['value'] == nearest_loi['value'] and vwap > nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100:
+                position = 'long'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+            elif position_taken and pre_loi['value'] == nearest_loi['value'] and vwap < nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100:
+                position = 'short'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount,-1)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+        # long 포지션으로 매수 : 포지션이 없는데, 이전 loi보다 근처 loi가 밑에 있고, 근처 loi와 현재가의 차가 마진이내일때 pl이 계산되고 loi가 갱신된다.            
+            elif pre_loi['value'] > nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100:
+                pre_loi = nearest_loi
+                position = 'long'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+        # short 포지션으로 매수 : 포지션이 없는데, 이전 loi보다 근처 loi가 위에 있고, 근처 loi와 현재가의 차가 마진이내일때 pl이 계산되고 loi가 갱신된다.
+            elif pre_loi['value'] < nearest_loi['value'] and round(abs(vwap - nearest_loi['value']),3) < margin/100:
+                pre_loi = nearest_loi
+                position = 'short'
+                position_taken = True
+                
+                buy_price = vwap
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount,-1)
+                pl = 0 
+                point = [dti_now, vwap]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'None', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+        # long 포지션에서 익절 : long 인데, 이전 loi보다 근처 loi가 위에 있고, pl이 pt_margin 이상일때 pl이 계산되고 loi가 갱신된다.
+        elif position == 'long':
+            if pre_loi['value'] <= nearest_loi['value'] and getPl(vwap,buy_price,amount) > pt_margin/100:
+                pre_loi = nearest_loi
+                position = 'None'
+                
+                scale_traded = False
+                pl = getPl(vwap,buy_price,amount)
+                amount = 0
+                point.extend([dti_now, vwap])
+                param = ['red']
+                param.extend(point)
+                points.append(param)
+                point = []
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'long', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+        # long 포지션에서 물타기 : long인데, 이전 loi보다 근처 loi가 밑에 있고, pl이 -lc_margin/200 보다 작을때 1회 물타기를 한다.
+            elif not scale_traded and pre_loi['value'] >= nearest_loi['value'] and getPl(vwap,buy_price,amount) < -scale_entry/100:
+            # elif not scale_traded and pre_loi['value'] >= nearest_loi['value'] and round(nearest_loi['value']-vwap,3) > lc_margin/200:
+                scale_traded = True
+                buy_price = (buy_price + vwap)/2
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount)
+                pl = 0
+                point.extend([dti_now, buy_price])
+                param = ['red']
+                param.extend(point)
+                points.append(param)
+                point = [dti_now,buy_price]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'long', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+        # long 포지션에서 손절 : long인데, 물탄 이후 이전 loi보다 근처 loi가 밑에 있고, pl이 -lc_margin 보다 작을때 손절한다.
+            elif scale_traded and pre_loi['value'] >= nearest_loi['value'] and getPl(vwap,buy_price,amount) < -lc_margin/100:
+                pre_loi = nearest_loi
+                position = 'None'
+                scale_traded = False
+                pl = getPl(vwap, buy_price,amount)
+                amount = 0
+                point.extend([dti_now, vwap])
+                param = ['red']
+                param.extend(point)
+                points.append(param)
+                point = []
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'long', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+        # short 포지션에서 익절 : short 인데, 이전 loi보다 근처 loi가 아래에 있고, pl이 pt_margin 이상일때 pl이 계산되고 loi가 갱신된다.
+        elif position == 'short':
+            if pre_loi['value'] >= nearest_loi['value'] and getPl(vwap,buy_price,amount,-1) > pt_margin/100:
+                pre_loi = nearest_loi
+                position = 'None'
+                
+                scale_traded = False
+                pl = getPl(vwap,buy_price,amount,-1)
+                amount = 0
+                point.extend([dti_now, vwap])
+                param = ['blue']
+                param.extend(point)
+                points.append(param)
+                point = []
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'short', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+        # short 포지션에서 물타기 : short인데, 이전 loi보다 근처 loi가 위에 있고, pl이 -lc_margin/200 보다 작을때 1회 물타기를 한다.
+            elif not scale_traded and pre_loi['value'] <= nearest_loi['value'] and getPl(vwap,buy_price,amount,-1) < -scale_entry/100:
+            # elif not scale_traded and pre_loi['value'] >= nearest_loi['value'] and round(nearest_loi['value']-vwap,3) > lc_margin/200:
+                scale_traded = True
+                buy_price = (buy_price + vwap)/2
+                amount += 1
+                # pl = getPl(vwap, buy_price,amount,-1)
+                pl = 0
+                point.extend([dti_now, buy_price])
+                param = ['blue']
+                param.extend(point)
+                points.append(param)
+                point = [dti_now,buy_price]
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'short', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+        # short 포지션에서 손절 : short인데, 물탄 이후 이전 loi보다 근처 loi가 위에 있고, pl이 -lc_margin/100 보다 작을때 손절한다.
+            elif scale_traded and pre_loi['value'] <= nearest_loi['value'] and getPl(vwap,buy_price,amount,-1) < -lc_margin/100:
+                pre_loi = nearest_loi
+                position = 'None'
+                scale_traded = False
+                pl = getPl(vwap, buy_price,amount,-1)
+                amount = 0
+                point.extend([dti_now, vwap])
+                param = ['blue']
+                param.extend(point)
+                points.append(param)
+                point = []
+                
+                writeSummary(df_result, dti_now, dfmkt.loc[dti_now,'time'], 'short', position, vwap, buy_price, amount, pl, dti_now, nearest_loi['name'], nearest_loi['value'])
+                
+                
+                
+    #     #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
+    #     #df_result의 dti_pre행을 indexing
+    #     if df_result.loc[dti_pre]['price'] == 'TBD':
+    #         df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+            
+    #         if execution =="adjusted":
+    #             ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+    #         elif execution == "vwap":
+    #             ent_price = vwap
+    #         else:
+    #             raise NameError('Wrong execution option')
+    #         df_result.at[dti_pre, 'price'] = ent_price
+        
+    #     #현재가(=vwap) 기준 LOI 거리순으로 정렬한 Series
+    #     s_loi_dist = (df_loi['value']- vwap).abs().sort_values()
+    #     current_loi_name = s_loi_dist.index[0]
+        
+    #     loi = df_loi.at[current_loi_name, 'value']
+    #     margin = df_loi.at[current_loi_name, 'margin']
+        
+    #     range_status = rangeTest(vwap, loi, margin)
+        
+    #     #LOI 레인지 밖에서 안으로 들어온 경우 
+    #     if range_status_prev == "out_of_range" and range_status == "within_range":
+    #         range_status_prev = range_status
+            
+    #     elif range_status_prev == "out_of_range" and range_status == "out_of_range":
+    #         pass
+        
+    #     elif range_status_prev == "within_range" and range_status == "within_range":
+    #         pass
+        
+    #     #LOI 레인지 안에서 밖으로 나가는 경우 --> signal 발생
+    #     elif range_status_prev == "within_range" and range_status == "out_of_range":
+    #         range_status_prev = range_status
+            
+    #         #1은 LOI 레인지 상향돌파, vice versa
+    #         signal_now = 1 if vwap > loi else -1
+    #         signal_now_at = dfmkt.at[dti_now, 'time']
+            
+    #         #이전시그널과 반대방향 또는 이전시그널발생후 30분이 지났을 때
+    #         if (signal_before != signal_now) or (signal_now_at > signal_before_at + pd.Timedelta('30m')) :
+                    
+    #             df_result.at[dti_now, 'loi_name'] = current_loi_name
+    #             df_result.at[dti_now, 'loi_value'] = loi
+    #             df_result.at[dti_now, 'direction'] = signal_now
+    #             signal_before = signal_now
+    #             signal_before_at = signal_now_at
+                
+    #             df_result.at[dti_now, 'loi'] = loi
+    #             #timedelta --> datetime.time형식으로 변환
+    #             df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                
+    #             df_result.at[dti_now, 'signal_vwap'] = vwap
+    #             df_result.at[dti_now, 'price'] = 'TBD'
+    #             df_result.at[dti_now, 'local_index'] = dti_now
+        
+    # """vwap index기준 test loop종료"""
+    
+    df_result.dropna(inplace=True)
+    
+    if not os.path.exists('rangeTradeMultiLoi.xlsx'):
+        with pd.ExcelWriter('rangeTradeMultiLoi.xlsx', mode = 'w', engine = 'openpyxl') as writer :
+            df_result.to_excel(writer, sheet_name=str(date))
+    else:
+        with pd.ExcelWriter('rangeTradeMultiLoi.xlsx', mode = 'a', engine = 'openpyxl') as writer :
+            df_result.to_excel(writer, sheet_name=str(date))
+    # workbook = writer.book()
+    # worksheet = workbook.add_worksheet(date)
+    # writer sheets[date] = worksheet
+    
+    writer.save()
+
+    """결과1차정리, PLOT을 위함"""
+    result = {'df' : df_result, 
+              'df_loi': df_loi, 
+              'dfmkt': dfmkt,
+              'rm_loi':rm_loi,
+              'point':points
+              }
+    
+    # """"결과PLOT"""    
+    if plot == "Y":
+        plotRangeTradeMultiLoi(result)
+
+    """"결과정리"""    
+    result['df'].index = result['df'].time
+    result['df'].index.name = 'index'
+    result['df_rmloi'] =rm_loi
+        
+    # result['df'].drop(columns='trade_time', inplace=True)
+    
+    return result
+
+def plotRangeTradeMultiLoi(tradeLoi_result):
+    """임시 플로팅 함수로 사용"""
+    df_result = tradeLoi_result['df']
+    df_result.index = df_result.local_index
+    # loi_option = tradeLoi_result['loi_option']
+    df = tradeLoi_result['dfmkt']
+    # loi = tradeLoi_result['loi']
+    loi = tradeLoi_result['df_loi']['value']
+    rmloi = tradeLoi_result['rm_loi']['value']
+    margin = tradeLoi_result['df_loi']['margin']
+    points = tradeLoi_result['point']
+    
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(1,1,1)
+
+    for point in points :
+        x1 = point[1]
+        y1 = point[2]
+        x2 = point[3]
+        y2 = point[4]
+        ax.scatter(x1,y1,color=point[0])
+        ax.scatter(x2,y2,color=point[0])
+        x = np.array([x1, x2])
+        y = np.array([y1, y2])
+        plt.plot(x,y, color=point[0],linewidth=1)
+
+    # for result_i in df_result.index:
+    #     marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
+    #     color = "tab:red" if marker == "^" else "b"
+    #     x = result_i
+    #     y = df_result.loc[result_i]['price']
+    #     ax.scatter(x, y, color=color, marker=marker, s=200)
+    
+    """
+    loi 값들을 수평선으로 그음(loi[0] : opt, loi[1] : val)
+    """
+
+    for i in range(len(loi)):
+        plt.axhline(y=loi[i], linewidth=1, color="blue")
+        plt.text(df_result.index[-1] if not df_result.empty else 0, loi[i], str(loi[i])+" / "+str(loi.index[i] + " / "+str(round(margin[i],2))), color="blue")
+        
+    for i in range(len(rmloi)):
+        plt.axhline(y=rmloi[i], linewidth=1, color="gray")
+        plt.text(0, rmloi[i], str(rmloi[i])+" / "+str(rmloi.index[i]), color="gray")
+    # for i in range(len(loi[1])) :
+    #     plt.axhline(y=loi[1][i], linewidth=1, color="blue")
+    #     plt.text("right", loi[1][i], loi[0][i] + " " +str(loi[1][i]), color="blue")
+    
+    
+    plt.plot(df.index, df['close'])
+    # Set plot name as xlabel
+    font = {'family': 'verdana',
+            'color':  'darkblue',
+            'weight': 'bold',
+            'size': 18,
+            }
+    # plot_name = '{0}: {1}, Margin: {2}'
+    # plot_name = '{0}: {1}'
+    # plot_name = plot_name.format(loi, tradeLoi_result['margin'])
+    plot_name = str(df.iloc[0]['date']) + '   ' + str(df.iloc[-1]['close'])
+    ax.set_xlabel(plot_name, fontdict=font)
+    plt.show()
+    pass
+
 
 
 
@@ -583,22 +1094,28 @@ def showGraph(loi, rm_loi, result, plot_name="QP") :
     plt.show()
 
 #%%trade multi Loi 백테스트
-date = datetime.date(2021,6,7)
-ld = list(util.getDailyOHLC().index)[20:]
-# ld = [d for d in ld if d.year==2021 and (d.month==5 or d.month==6)]
-# r = tradeMultiLoi(date, plot="Y")
+date = datetime.date(2018,2,7)
+# ld = list(util.getDailyOHLC().index)[20:]
+# ld = [d for d in ld if d.year<=2021 and d.year >=2017]
+r = rangeTradeMultiLoi(date, plot="Y")
 total = 0.00
-df_summary = pd.DataFrame(columns=['day_pl_sum', 'day_signal_cnt'])
-writer = pd.ExcelWriter("lktbf_loi_result.xlsx",engine="xlsxwriter")
-for i, day in enumerate(ld) :
-    r = tradeMultiLoi(day , plot="Y")
-    x, pl, cnt = calDailyPlLoi(r)
-    df_summary.loc[day,'day_pl_sum'] = pl
-    df_summary.loc[day,'day_signal_cnt'] = cnt
-    total += pl
-    print(total, "   ",total/(i+1))
-df_summary.to_excel(writer)
-writer.save()
+# df_summary = pd.DataFrame(columns=['day_pl_sum', 'day_signal_cnt'])
+# writer = pd.ExcelWriter("summary_range_multiloi.xlsx",engine="xlsxwriter")
+
+# for i, day in tqdm(enumerate(ld)) :
+#     r = rangeTradeMultiLoi(day , plot="Y")
+#     daily_pl = r['df']['pl'].sum()
+#     trade_cnt = len(r['df'].index)
+#     df_summary.loc[day, 'day_pl_sum'] = daily_pl
+#     df_summary.loc[day, 'day_signal_cnt'] = trade_cnt
+    
+    # x, pl, cnt = calDailyPlLoi(r)
+    # df_summary.loc[day,'day_pl_sum'] = pl
+    # df_summary.loc[day,'day_signal_cnt'] = cnt
+    # total += pl
+    # print(total, "   ",total/(i+1))
+# df_summary.to_excel(writer)
+# writer.save()
 #%%EMA
 
 def crossTest(ema_fast, ema_slow, margin=0.5):
