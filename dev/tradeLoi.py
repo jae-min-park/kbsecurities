@@ -1152,7 +1152,6 @@ def showGraph(loi, rm_loi, result, plot_name="QP") :
 #     # print(total, "   ",total/(i+1))
 # # df_summary.to_excel(writer)
 # writer.save()
-#%%EMA
 
 def crossTest(ema_fast, ema_slow, margin=0.5):
     """
@@ -1201,8 +1200,6 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
               'config': (fast_coeff, slow_coeff, margin)}
     
     """
-    # #MySQL문법에 맞게 따옴표 처리
-    # vol_option = "`" + vol_option + "`"
     
     #테스트를 위한 해당일의 시장 data load
     dfmkt = util.setDfData(date, date, vol_option)
@@ -1371,7 +1368,7 @@ def calPlEma_wlossCut(result_ema):
     """daytrader를 가정하고 PL에 따른 손절 실행"""
     pass
 
-def calPlEmaTimely(r, timebin="5min", losscut="N"):
+def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
     """시간흐름에 따른 PL 계산
     Parameters
         r : tradeEma 리턴값
@@ -1391,20 +1388,33 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
     #오늘 날짜 정의
     date = r['dfmkt']['date'][0]
     
-    #시간대별 PL을 알아보기 위한 기초 시장 DATA 
-    df1min = util.setDfData(date, date, '`lktbf_min`', datetime_col="Y")
+    #시간대별 PL을 알아보기 위한 기초 시장 DATA
+    if asset == 'lktbf':
+        asset_time_table = 'lktbf_min'
+        asset_multiplier = 100 #한 틱을 PL 1.0으로 표시하기 위함
+        lc = -0.15 #15틱 손절
+    elif asset == 'ktbf':
+        asset_time_table = 'ktbf_min'
+        asset_multiplier = 100 #한 틱을 PL 1.0으로 표시하기 위함
+        lc = -0.05 #5틱 손절
+    elif asset == 'usdkrw':
+        asset_time_table = 'usdkrw_min'
+        asset_multiplier = 10 #한 틱을 PL 1.0으로 표시하기 위함
+        lc = -3.0 #3원 손절
+        
+    df1min = util.setDfData(date, date, asset_time_table, datetime_col="Y")
     
     #시간대별 PL을 정리하기 위한 dataframe
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
     
-    pl0930 = pl1000 = pl1030 = pl1100 = pl1130 = pl1400 = 9999
+    pl0930 = pl1000 = pl1030 = pl1100 = pl1130 = pl1200 = pl1300 = pl1400 = 99999
     
     for t in df.index:
         #ts: til now signal table
         ts = sig[:t]
         prc = df.at[t, 'close']
         
-        pl = sum(100 * ts.direction.values * ts.amt.values * (prc - ts.price.values))
+        pl = sum(asset_multiplier * ts.direction.values * ts.amt.values * (prc - ts.price.values))
         df.at[t, 'pl'] = pl
         
         num_trade = ts.amt.sum()
@@ -1414,18 +1424,29 @@ def calPlEmaTimely(r, timebin="5min", losscut="N"):
             pl0930 = pl
         elif t.time() ==datetime.time(10,00):
             pl1000 = pl
-        elif t.time() ==datetime.time(10,30):
-            pl1030 = pl
+        # elif t.time() ==datetime.time(10,30):
+        #     pl1030 = pl
         elif t.time() ==datetime.time(11,00):
             pl1100 = pl
-        elif t.time() ==datetime.time(11,30):
-            pl1130 = pl
+        # elif t.time() ==datetime.time(11,30):
+        #     pl1130 = pl
+        elif t.time() ==datetime.time(12,00):
+            pl1200 = pl
+        elif t.time() ==datetime.time(13,00):
+            pl1300 = pl
         elif t.time() ==datetime.time(14,00):
             pl1400 = pl
         
         #손절조건검토
-        if losscut == "Y" and pl < -10 and (pl1000 > pl1100 > pl1400) and t.time() < datetime.time(14,5) :
+        # 시간 조건 같이 검토
+        if losscut == "Y" and pl < lc*asset_multiplier and (pl1000 > pl1100 > pl1300) and t.time() < datetime.time(13,5) :
             break
+        #시간 조건 제외
+        # if losscut == "Y" and pl < -15 and (pl1000 > pl1100 > pl1130):
+        #     break
+        #손익 조건만 검토
+        # if losscut == "Y" and pl < -15:
+        #     break
     
     df.dropna(inplace=True)
         
