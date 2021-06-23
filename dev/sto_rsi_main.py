@@ -48,7 +48,7 @@ def getPl(vwap, buy_price, amt, direction=1) :
     return round(amt*(vwap - buy_price)*direction,3)
 
 
-def crossTest(sto_fast, sto_slow, margin=0.05):
+def crossTest(sto_fast, sto_slow, margin=0.01):
     """
     sto_fast와 sto_slow를 비교
     
@@ -70,7 +70,7 @@ def crossTest(sto_fast, sto_slow, margin=0.05):
     return cross_status
     
 
-def stochastic(dfmkt, date, N, m, t, pt=0.08, lc=-0.15, below_margin=0.1, above_margin=0.9, plot='N'):
+def stochastic(dfmkt, date, N, m, t, pt=0.04, lc=-0.99, below_margin=0.1, above_margin=0.9, plot='N'):
     idx = dfmkt.index
     # slow_D = []
     # slow_K = []
@@ -85,7 +85,7 @@ def stochastic(dfmkt, date, N, m, t, pt=0.08, lc=-0.15, below_margin=0.1, above_
     
     # pre_position ='None'
     position = 'None'
-    status = 'None'
+    status = 'mid'
     
     for dti_pre ,dti_now, dti_post in zip(idx, idx[N-1:], idx[N:]):
 
@@ -138,39 +138,55 @@ def stochastic(dfmkt, date, N, m, t, pt=0.08, lc=-0.15, below_margin=0.1, above_
                 buy_price = 0
                 amount = 0
                 
-            # slow_K가 below_margin(0.3)밑으로 내려갈때 short 청산하고 
-            elif (status == 'above' or status == 'None' or status == 'mid') and crossTest(dfmkt.loc[dti_now,'slow_K'], below_margin) == 'below' :
+            # slow_K가 below_margin 아래에서 위로 올라갈 때
+            elif (status == 'below') and crossTest(dfmkt.loc[dti_now,'slow_K'], below_margin) == 'mid' :
+                # short 청산하고
                 if position == 'short' and amount > 0 :
-                    status = 'below'
+                    status = 'mid'
                     position = 'None'
                     cause = 'below margin'
-                    writeSummary(df_result, dti_now, time, pre_status, status, pre_position, position, 'close', vwap, buy_price, amount, pl, cause, local_index)
+                    writeSummary(df_result, dti_now, time, pre_status, status, 
+                                 pre_position, position, 'close', vwap, buy_price, 
+                                 amount, pl, cause, local_index)
                     buy_price = 0
                     amount = 0
-            # long 으로 포지션 잡기
-                status = 'below'
+                # long 으로 포지션 잡기
+                status = 'mid'
                 position = 'long'
                 buy_price = (vwap + buy_price*amount) / (amount+1)
                 amount+=1
                 pl = 0
-                writeSummary(df_result, dti_post, time, pre_status, status, pre_position, position, 'open', vwap, buy_price, amount, pl, 'None', local_index)
+                writeSummary(df_result, dti_post, time, pre_status, status, 
+                             pre_position, position, 'open', vwap, buy_price, 
+                             amount, pl, 'None', local_index)
+            
+            #현재가의 crosstest 결과에 따라 상태만 변경해주고 signal은 발생하지 않음
+            elif (status == 'mid') and crossTest(dfmkt.loc[dti_now,'slow_K'], below_margin) == 'below': 
+                status = 'below'
+            elif (status == 'mid') and crossTest(dfmkt.loc[dti_now,'slow_K'], above_margin) == 'above':
+                status = 'above'
 
-            # slow_K가 above_margin(0.7)위로 올라갈때 long 청산하고             
-            elif (status == 'below' or status == 'None' or status == 'mid') and crossTest(dfmkt.loc[dti_now,'slow_K'], above_margin) == 'above' :
+            # slow_K가 above_margin 위에서 아래로 내려올때
+            elif (status == 'above') and crossTest(dfmkt.loc[dti_now,'slow_K'], above_margin) == 'mid' :
+                # long 청산하고
                 if position == 'long' and amount > 0 :
-                    status = 'above'
+                    status = 'mid'
                     position = 'None'
-                    writeSummary(df_result, dti_now, time, pre_status, status, pre_position, position, 'close', vwap, buy_price, amount, pl, 'above margin', local_index)
+                    writeSummary(df_result, dti_now, time, pre_status, status,
+                                 pre_position, position, 'close', vwap, buy_price, 
+                                 amount, pl, 'above margin', local_index)
                     buy_price = 0
                     amount = 0
-            # short 으로 포지션 잡기
-                status = 'above'
+                # short 으로 포지션 잡기
+                status = 'mid'
                 position = 'short'
                 buy_price = (vwap + buy_price*amount) / (amount+1)
                 amount+=1
                 pl = 0
-                writeSummary(df_result, dti_post, time, pre_status, status, pre_position, position, 'open', vwap, buy_price, amount, pl, 'None', local_index)
-                
+                writeSummary(df_result, dti_post, time, pre_status, status,
+                             pre_position, position, 'open', vwap, buy_price,
+                             amount, pl, 'None', local_index)
+            
         if idx[-2] == i :
             # 마지막에 청산
             if amount > 0 :
@@ -186,13 +202,13 @@ def stochastic(dfmkt, date, N, m, t, pt=0.08, lc=-0.15, below_margin=0.1, above_
     # dfmkt.dropna(inplace=True)
     dfmkt.fillna(method='backfill', inplace=True)
     
-    if not os.path.exists('sto_test.xlsx'):
-        with pd.ExcelWriter('sto_test.xlsx', mode = 'w', engine = 'openpyxl') as writer :
-            df_result.to_excel(writer, sheet_name=str(date))
-    else:
-        with pd.ExcelWriter('sto_test.xlsx', mode = 'a', engine = 'openpyxl') as writer :
-            df_result.to_excel(writer, sheet_name=str(date))
-    writer.save()
+    # if not os.path.exists('sto_test.xlsx'):
+    #     with pd.ExcelWriter('sto_test.xlsx', mode = 'w', engine = 'openpyxl') as writer :
+    #         df_result.to_excel(writer, sheet_name=str(date))
+    # else:
+    #     with pd.ExcelWriter('sto_test.xlsx', mode = 'a', engine = 'openpyxl') as writer :
+    #         df_result.to_excel(writer, sheet_name=str(date))
+    # writer.save()
     
     if plot=='Y' :
         fig = plt.figure(figsize=(8,8))
@@ -228,9 +244,9 @@ def stochastic(dfmkt, date, N, m, t, pt=0.08, lc=-0.15, below_margin=0.1, above_
     return df_result
 
 
-N = 500
+
 m = 200
-t = 20
+t = 10
 # day = dt.date(2021,5,31)
 # dfmkt = util.setDfData(day, day, 'lktbf50vol')
 # r = stochastic(dfmkt, day, N, m, t, plot='Y')
@@ -239,14 +255,23 @@ t = 20
 """복수 일자 """
 total = 0.00
 df_summary = pd.DataFrame(columns=['day_pl_sum', 'day_signal_cnt'])
-writer = pd.ExcelWriter("summary_sto_test.xlsx",engine="xlsxwriter")
+# writer = pd.ExcelWriter("summary_sto_test.xlsx",engine="xlsxwriter")
 
 ld = list(util.getDailyOHLC().index)[:]
-ld = [d for d in ld if d.year==2021]
+ld = [d for d in ld if d > dt.date(2021,6,15)]
+# ld = [d for d in ld if d.year==2021 and (d.month==5 or d.month==6)]
+# ld = [d for d in ld if d.year==2021 and d.month==6 ]
+# ld = [dt.date(2018,1,3)]
+
 
 for i, day in tqdm(enumerate(ld)) :    
-    dfmkt = util.setDfData(day, day, 'lktbf50vol')
-    r = stochastic(dfmkt, day, N, m, t,plot='Y')
+    dfmkt = util.setDfData(day, day, 'lktbf100vol')
+    
+    #직전 5일간 평균 거래량의 20%를 레인지 관찰 window로 사용
+    N = int( util.getNdayMovingAverage(day, 5, asset = 'lktbf', option="volume") * 0.20 / 100 )
+    print("N = ", N)
+    r = stochastic(dfmkt, day, N, m, t, pt=0.04, lc=-0.99,
+                   below_margin=0.15, above_margin=0.85, plot='Y')
     
     daily_pl = round(r['pl'].sum(),3)
     trade_cnt = len(r.index)
@@ -259,6 +284,7 @@ for i, day in tqdm(enumerate(ld)) :
     total += daily_pl
     print(round(total,3), "   ",round(total/(i+1),3))
     print("-------------------------------------------------------------------------------------\n")
-df_summary.to_excel(writer)
-writer.save()
+    
+# df_summary.to_excel(writer)
+# writer.save()
     

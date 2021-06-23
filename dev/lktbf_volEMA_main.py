@@ -12,10 +12,10 @@ def main():
     print("Running main function\n")
     
     #일봉기준 전체 date list
-    # ld = list(util.getDailyOHLC().index)
+    ld = list(util.getDailyOHLC().index)
     # ld = [d for d in ld if d.year==2020 ]
-    # ld = [d for d in ld if d.year==2021]
-    ld = [datetime.date(2019, 6, 25)]
+    ld = [d for d in ld if d.year==2021 and d.month==6]
+    # ld = [datetime.date(2021, 6, 21)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
@@ -24,9 +24,9 @@ def main():
         result_ema = tradeEma(day, 'lktbf50vol', plot="Y", execution="vwap", 
                               fast_coeff=0.3,
                               slow_coeff=0.05,
-                              margin = 1.0)
+                              margin = 0.5)
         
-        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y")
+        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="N", asset="lktbf")
         
         dfpl.at[i, 'date'] = day
         
@@ -51,7 +51,7 @@ def main():
         print(f'Cumul | cumsum: {cumsum}  mean:{mean}  SR: {sr}  trades/day: {num_trade_avg}',
               "\n---------------------------------------------------------------")
     
-    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    # dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
     
     return dfpl
 

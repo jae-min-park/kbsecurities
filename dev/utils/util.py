@@ -100,7 +100,7 @@ def getYdayOHLC(today=datetime.date, table='lktbf_day', dfmkt=None):
             'low': dfmkt.loc[yday]['low'],
             'close': dfmkt.loc[yday]['close']}
 
-def getNdayMovingAverage(today, n, option="close"):
+def getNdayMovingAverage(today, n, asset='lktbf', option="close"):
     """
 
     Parameters
@@ -120,7 +120,7 @@ def getNdayMovingAverage(today, n, option="close"):
 
     """
     ma_start_date = date_offset(today, -n)
-    df_daily = getDailyOHLC(ma_start_date, today)
+    df_daily = getDailyOHLC(ma_start_date, today, market_table_name=asset+'_day')
     
     if option == "close":
         ma = round(df_daily.close[:-1].mean(), 2)
