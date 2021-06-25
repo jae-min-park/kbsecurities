@@ -218,9 +218,9 @@ def tradeEma(dates, sp1_option='ktbf_10sec', sp2_option='lktbf_10sec', plot="N",
 
 def plotSingleMA(tradeEma_result):
     """임시 플로팅 함수로 사용"""
-    df_result = tradeEma_result['df']
+    df_result = tradeEma_result['df'].copy()
     df_result.index = df_result.local_index
-    df = tradeEma_result['dfmkt']
+    df = tradeEma_result['dfmkt'].copy()
 
     # for i in df.index:
         # tmp = i.second + i.minute*60 + i.hour*3600 + i.day*3600*24 + i.month*3600*24*31 - 2764800
@@ -231,19 +231,65 @@ def plotSingleMA(tradeEma_result):
     # index = sorted(list(set(index)))
     # idx = np.array(idx)
     # idx = df.index
+        # 날짜 변경 지점 찾기
+
+    df['index'] = df.index
     
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(1,1,1)
+    # df.set_index('local_index',inplace=True)
+    # df.index = df.index.astype(int)
+    df.reset_index(inplace=True)
+    df["dt"] = df["index"] - df["index"].shift(1) # 데이터간 시간차
+    df["dt"] = df["dt"].apply(lambda x: x.total_seconds())  # 초단위 환산
+    df["dt"].fillna(0, inplace=True)              # 첫 데이터 빈칸 채우기
+    
+    # 날짜별 그룹 만들기
+    df["tgroup"] = np.nan
+    tg = 1
+    for i in range(df.shape[0]):
+        if df["dt"].iloc[i] > 1000:
+            tg += 1
+        df["tgroup"].iloc[i] = tg
+
+    df["tgroup"] = df["tgroup"].astype("int")
+    
+    # 날짜, 시간 데이터 쪼개기
+    df["date"] = df["index"].apply(lambda x: x.strftime("%y-%m-%d"))
+    df["time"] = df["index"].apply(lambda x: x.strftime("%H:%M"))
+    
+    # 시각화
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(df['vwap'])
+    xticks = [int(x) for x in ax.get_xticks() if (x >= 0 and x < ax.get_xbound()[1])]
+    del xticks[-1]
+    xticklabels = df['time'].loc[xticks]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xticklabels)
+
+    # 날짜분리선
+    date_changes = df.loc[df["dt"] > 1000].index
+    for d in date_changes:
+        ax.axvline(d, c="c")
+
+    # 날짜 입력
+    for i in range(tg):
+        df_tg = df.loc[df["tgroup"] == i+1]
+        text_x = np.mean(df_tg.index)
+        ax.text(text_x, df['vwap'].max(), df_tg["date"].iloc[0], 
+                ha="center", color="c")
+
+    # fig = plt.figure(figsize=(8,8))
+    # ax = fig.add_subplot(1,1,1)
     for result_i in df_result.index:
         marker = "^" if df_result.loc[result_i]['direction'] == 1 else "v"
         color = "tab:red" if marker == "^" else "b"
         # x = str(result_i)[5:16]
-        x = df_result.loc[result_i]['local_index']
+        x = df_result.loc[result_i]['local_index']/6
         y = df_result.loc[result_i]['price']
         ax.scatter(x, y, color=color, marker=marker, s=400)
-    plt.plot(df['local_index'], df['vwap'])
-    plt.plot(df['local_index'], df['ema_fast'])
-    plt.plot(df['local_index'], df['ema_slow'])
+    # plt.plot(df['local_index'], df['vwap'])
+    plt.plot(df['local_index']/6, df['ema_fast'])
+    plt.plot(df['local_index']/6, df['ema_slow'])
     
     # plt.xticks(rotation=45)
     # plt.locator_params(axis='x', nbins=len(idx)/6000)
@@ -258,7 +304,7 @@ def plotSingleMA(tradeEma_result):
     plot_name = plot_name.format(tradeEma_result['config'][0],
                                  tradeEma_result['config'][1],
                                  tradeEma_result['config'][2],
-                                 str(tradeEma_result['dfmkt'].index[0])[:10]+"~"+str(tradeEma_result['dfmkt'].index[-1])[:10])
+                                 str(df['date'][0])+" ~ "+str(df['date'].iloc[-1]))
                                  
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
