@@ -4,7 +4,7 @@ Created on Tue May 11 10:19:35 2021
 
 @author: infomax
 """
-import numpy as np
+
 import pandas as pd
 import pymysql
 import datetime
@@ -18,16 +18,6 @@ test_db = pymysql.connect(user='admin',
 
 cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
-""" 만기일들 db에서 array안에 datetime이 들어가 있는 자료구조로 불러와 주는 함수"""
-def getMaturityDays(date_start='2017-01-01', date_end=str(datetime.datetime.now())[:10], table='ktbf_lktbf_maturityday'):
-    sql = "SELECT * FROM "+ table +" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    res =[]
-    for item in result :
-        res.append(item['date'])
-    arr = np.array(res)
-    return arr
 
 def setDfData(date_start, date_end, table, datetime_col="N") :
     sql = "SELECT * FROM "+ table +" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
