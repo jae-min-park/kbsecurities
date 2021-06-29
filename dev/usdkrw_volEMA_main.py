@@ -14,27 +14,30 @@ def main():
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC(market_table_name='usdkrw_day').index)
     # ld = [d for d in ld if d < datetime.date(2021,6,1)]
-    ld = [d for d in ld if d.year==2021 and d.month==6]
-    # ld = [datetime.date(2021, 6, 21)]
+    # ld = [d for d in ld if d.year==2021 and d.month==6]
+    # ld = [d for d in ld if d.year==2020 and d.month==3]
+    # ld = [datetime.date(2021, 6, 25)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'usdkrw200vol', plot="Y", execution="vwap", 
-                              fast_coeff=0.3,
-                              slow_coeff=0.03,
+        result_ema = tradeEma(day, 'usdkrw200vol', plot="N", execution="vwap", 
+                              fast_coeff=0.5,
+                              slow_coeff=0.05,
                               margin = 0.5)
         
         timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y", asset='usdkrw')
         
         dfpl.at[i, 'date'] = day
         
-        pl_of_the_day = round(timelyPl.pl[-1], 2)
-        dfpl.at[i, 'pl'] = pl_of_the_day
         
         num_trade = timelyPl.num_trade[-1]
         dfpl.at[i, 'num_trade'] = num_trade
+        trade_fee = 0.01 * num_trade
+        
+        pl_of_the_day = round(timelyPl.pl[-1] - trade_fee, 2)
+        dfpl.at[i, 'pl'] = pl_of_the_day
         
         trade_ended_at = str(timelyPl.index[-1])[-8:]
         
@@ -51,12 +54,14 @@ def main():
         print(f'Cumul | cumsum: {cumsum}  mean:{mean}  SR: {sr}  trades/day: {num_trade_avg}',
               "\n---------------------------------------------------------------")
     
-    # dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    # dfpl.drop(columns=['date'], inplace=True)
+    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    dfpl.drop(columns=['date'], inplace=True)
     
-    return dfpl
+    return dfpl, result_ema['df']
 
 if __name__ == "__main__":
-    dfpl = main()
+    dfpl, sig = main()
+    dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
+    print(dfpl_group)
 
 

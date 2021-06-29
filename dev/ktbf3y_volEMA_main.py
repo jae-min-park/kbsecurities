@@ -14,8 +14,8 @@ def main():
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC(market_table_name='ktbf_day').index)
     # ld = [d for d in ld if d.year==2020 ]
-    ld = [d for d in ld if d.year==2021 and d.month ==6]
-    # ld = [datetime.date(2021, 6, 21)]
+    # ld = [d for d in ld if d.year==2021 and d.month == 6 ]
+    # ld = [datetime.date(2021, 6, 25)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
@@ -30,11 +30,12 @@ def main():
         
         dfpl.at[i, 'date'] = day
         
-        pl_of_the_day = round(timelyPl.pl[-1], 2)
-        dfpl.at[i, 'pl'] = pl_of_the_day
-        
         num_trade = timelyPl.num_trade[-1]
         dfpl.at[i, 'num_trade'] = num_trade
+        trade_fee = 0.05 * num_trade
+        
+        pl_of_the_day = round(timelyPl.pl[-1] - trade_fee, 2)
+        dfpl.at[i, 'pl'] = pl_of_the_day
         
         trade_ended_at = str(timelyPl.index[-1])[-8:]
         
@@ -51,11 +52,16 @@ def main():
         print(f'Cumul | cumsum: {cumsum}  mean:{mean}  SR: {sr}  trades/day: {num_trade_avg}',
               "\n---------------------------------------------------------------")
     
-    # dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+    dfpl.drop(columns=['date'], inplace=True)
     
-    return dfpl
+    return dfpl, result_ema['df']
 
 if __name__ == "__main__":
-    dfpl = main()
-
-
+    dfpl, sig = main()
+    
+    dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
+    print(dfpl_group)
+    
+    
+    
