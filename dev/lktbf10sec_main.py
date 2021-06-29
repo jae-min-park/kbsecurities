@@ -6,11 +6,11 @@ Created on Tue Apr 20 12:06:19 2021
 """
 from tqdm import tqdm
 import ddt_util
-import lktbf10sec_datamanager as dm
+from managers.lktbf10sec_dataManager import *
 import datetime
 import pymysql
 import pandas as pd
-import lktbf10sec_plotmanager as pm
+from managers.lktbf10sec_plotManager import *
 
 test_db = pymysql.connect(user='admin',
                           passwd='se21121',
@@ -24,8 +24,8 @@ cursor = test_db.cursor(pymysql.cursors.DictCursor)
 """
 일단 기본 ohlc sql통해 날자값 안으로 df받아오기
 """
-dfm = dm.DataFrameManager(cursor)
-dt_start = pd.Timestamp(year=2019, month = 3, day = 2)
+dfm = DataFrameManager(cursor)
+dt_start = pd.Timestamp(year=2020, month = 3, day = 2)
 dt_end = pd.Timestamp(year=2021, month = 4, day = 6)
 dfm.setDfData(dt_start, dt_end)
 df = dfm.df
@@ -67,7 +67,7 @@ for i,date in enumerate(date_set) :
 print(df_strategy[df_strategy.gravePattern])
 print(df_strategy[df_strategy.reboundPattern])
 print(df_strategy[df_strategy.declinePattern])
-pm.plot(df, df_strategy[df_strategy.declinePattern].index)
+plot(df, df_strategy[df_strategy.declinePattern].index)
 
 
 # """
