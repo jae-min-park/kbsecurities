@@ -1172,10 +1172,9 @@ def crossTest(ema_fast, ema_slow, margin=0.5):
         
     return cross_status
     
-    
 
 def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
-             fast_coeff=0.3, slow_coeff=0.1, margin=0.5):
+             fast_coeff=0.3, slow_coeff=0.1, margin=0.5, dfmkt=None):
     """
     tradeEma는 장중 한방향 트렌드가 지속될 때 많은 수익을 추구
     필연적으로 방향전환이 많은 날은 손실 발생 가능
@@ -1202,7 +1201,9 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
     """
     
     #테스트를 위한 해당일의 시장 data load
-    dfmkt = util.setDfData(date, date, vol_option)
+    # if dfmkt == None or dfmkt.empty == True:
+    if dfmkt is None or dfmkt.empty == True:
+        dfmkt = util.setDfData(date, date, vol_option)
     
     #local index
     dti = dfmkt.index
@@ -1225,11 +1226,12 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
     prev_status = "attached"
     
     #현재의 signal 상태를 저장
-    signal_before = 0 
+    signal_before = 0
+    signal_now = 0
     
     #ema_fast, ema_slow 시작점 정의, ema는 dfmkt에 저장한다
-    dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'close']
-    dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'close']
+    dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'vwap']
+    dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'vwap']
     
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
@@ -1238,10 +1240,11 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
         #dti_pre에서 signal 발생한 경우 dti_now에서 time, price 설정
         #df_result의 dti_pre행을 indexing
         if df_result.loc[dti_pre]['price'] == 'TBD':
-            df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+            # df_result.at[dti_pre, 'trade_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+            df_result.at[dti_pre, 'trade_time'] = dfmkt.loc[dti_now,'datetime']
             
             if execution =="adjusted":
-                ent_price = upp(vwap) if df_result.iloc[-1]['direction'] == 1 else flr(vwap)
+                ent_price = upp(vwap) if signal_now == 1 else flr(vwap)
             elif execution == "vwap":
                 ent_price = vwap
             else:
@@ -1277,7 +1280,7 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
                     signal_before = signal_now
                     
                     #timedelta --> datetime.time형식으로 변환
-                    df_result.at[dti_now, 'signal_time'] = pd.to_datetime(str(date) + ' ' + str(dfmkt.loc[dti_now,'time'])[7:])
+                    df_result.at[dti_now, 'signal_time'] = dfmkt.loc[dti_now,'datetime']
                         
                     df_result.at[dti_now, 'signal_vwap'] = vwap
                     df_result.at[dti_now, 'price'] = 'TBD'
@@ -1288,6 +1291,7 @@ def tradeEma(date, vol_option='lktbf50vol', plot="N", execution="adjusted",
     
     """NA제거"""
     df_result.dropna(inplace=True)
+    df_result['slpg'] = -df_result['direction']*(df_result['price'] - df_result['signal_vwap'])
     
     """가동시간 설정 """
     # start_time = '10:30:00'
@@ -1324,7 +1328,7 @@ def plotSingleMA(tradeEma_result):
         x = result_i
         y = df_result.loc[result_i]['price']
         ax.scatter(x, y, color=color, marker=marker, s=300)
-    plt.plot(dfmkt.index, dfmkt['close'])
+    plt.plot(dfmkt.index, dfmkt['vwap'])
     plt.plot(dfmkt.index, dfmkt['ema_fast'])
     plt.plot(dfmkt.index, dfmkt['ema_slow'])
     
@@ -1402,10 +1406,13 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
         asset_multiplier = 10 #한 틱을 PL 1.0으로 표시하기 위함
         lc = -3.0 #3원 손절
         
-    df1min = util.setDfData(date, date, asset_time_table, datetime_col="Y")
+    df1min = util.setDfData(date, date, asset_time_table)
+    df1min.set_index('datetime', inplace=True)
+    
     
     #시간대별 PL을 정리하기 위한 dataframe
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
+    
     
     pl0930 = pl1000 = pl1030 = pl1100 = pl1130 = pl1200 = pl1300 = pl1400 = 99999
     
