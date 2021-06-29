@@ -1,8 +1,11 @@
 import datetime
-import utils.util
 import pandas as pd
 from tqdm import tqdm
+import sys
+sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
+import util
 from tradeLoi import *
+
 
 
 #%%trade multi Loi 백테스트

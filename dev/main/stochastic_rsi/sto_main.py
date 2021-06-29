@@ -1,10 +1,11 @@
-import utils.util as util
 import pandas as pd
 from matplotlib import pyplot as plt
 import datetime as dt
 import numpy as np
-import os
 from tqdm import tqdm
+import sys
+sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
+import util
 
 # """
 # 이득, 손해 사이에 선을 그려주는 함수

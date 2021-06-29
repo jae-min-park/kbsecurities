@@ -1,9 +1,10 @@
-import utils.util as util
-import tradeLoi as tl
 import pandas as pd
 from matplotlib import pyplot as plt
 import datetime as dt
-
+import sys
+sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
+import util
+import tradeLoi as tl
 
 """
 dfmkt의 틱마다 거래별 pl누적을 시킴
