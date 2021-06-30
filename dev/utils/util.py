@@ -4,10 +4,11 @@ Created on Tue May 11 10:19:35 2021
 
 @author: infomax
 """
-import numpy as np
+
 import pandas as pd
 import pymysql
 import datetime
+import numpy as np
 
 test_db = pymysql.connect(user='admin',
                           passwd='se21121',
@@ -18,29 +19,79 @@ test_db = pymysql.connect(user='admin',
 
 cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
-""" 만기일들 db에서 array안에 datetime이 들어가 있는 자료구조로 불러와 주는 함수"""
-def getMaturityDays(date_start='2017-01-01', date_end=str(datetime.datetime.now())[:10], table='ktbf_lktbf_maturityday'):
-    sql = "SELECT * FROM "+ table +" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    res =[]
-    for item in result :
-        res.append(item['date'])
-    arr = np.array(res)
-    return arr
 
-def setDfData(date_start, date_end, table, datetime_col="N") :
+def setDfData(date_start, date_end, table, skip_datetime_col="N") :
     sql = "SELECT * FROM "+ table +" where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
     # sql = "select * from `lktbf10sec` where date >= '"+ str(date_start)[:10] + "' and date <= '" + str(date_end)[:10] + "';"
     cursor.execute(sql)
     result = cursor.fetchall()
     
     df = pd.DataFrame(result)
-    if datetime_col == "Y":
+    
+    if skip_datetime_col == "Y":
+        return df
+    
+    else:
         df['datetime'] = pd.to_datetime(df.date.astype(str) + ' ' + df.time.astype(str).apply(lambda x: x[7:]))
-        df.set_index('datetime', inplace=True)
         
+    #     df['datetime'] = pd.to_datetime(df.date.astype(str) + ' ' + df.time.astype(str).apply(lambda x: x[7:]))
+    #     df.set_index('datetime', inplace=True)
     return df
+
+def setRtData(asset="lktbf", dtype="vol"):
+    if asset == "lktbf" and dtype == "vol":
+        dftick = pd.read_excel("lktbf_rt.xlsx", header=3, usecols="A,B,C,D")
+        dfrt = convertRtTickToVol(dftick, 50)
+    elif asset == "ktbf3y" and dtype == "vol":
+        dftick = pd.read_excel("ktbf3y_rt.xlsx", header=3, usecols="A,B,C,D")
+        dfrt = convertRtTickToVol(dftick, 200)
+        
+    dfrt['datetime'] = pd.to_datetime(dfrt.date.astype(str) + ' ' + dfrt.time.astype(str))
+        
+    return dfrt
+
+def convertRtTickToVol(dftick, vol_bin):
+    
+    dfbinned = pd.DataFrame(columns=['date','time','vwap','price'])
+        
+    vol_list = []
+    prc_list = []
+    
+    i_resampled = 0
+    
+    for i in dftick.index:
+        vol = dftick.at[i, '거래량']
+        prc = dftick.at[i, '현재가']
+            
+        vol_list.append(vol)
+        prc_list.append(prc)
+        
+        cumsum_vol = sum(vol_list)
+        
+        if cumsum_vol >= vol_bin:
+            bins_made = int(cumsum_vol / vol_bin)
+            leftover = cumsum_vol % vol_bin
+            vol_list[-1] = vol_list[-1] - leftover
+            vwap = sum(np.array(prc_list) * np.array(vol_list)) / (bins_made * vol_bin)
+            
+            for n in range(bins_made):
+                dfbinned.at[i_resampled, 'vwap'] = vwap
+                dfbinned.at[i_resampled, 'date'] = dftick.at[i, '일자']
+                dfbinned.at[i_resampled, 'time'] = dftick.at[i, '시간']
+                dfbinned.at[i_resampled, 'price'] = dftick.at[i, '현재가']
+                i_resampled += 1
+            
+            vol_list = [leftover] #[0]이어도 무관
+            prc_list = [prc]
+        
+        else:
+            pass
+        
+    return dfbinned
+    
+        
+        
+
 
 def date_offset(ref_day, n=int):
     """
@@ -65,7 +116,7 @@ def getDailyOHLC(start_date='2000-10-01',
     """
     returns : 일봉 dataframe
     """
-    df = setDfData(start_date, end_date, market_table_name)
+    df = setDfData(start_date, end_date, market_table_name, skip_datetime_col="Y")
     df.index = df.date
     df = df.drop(columns='date')
     
