@@ -19,13 +19,13 @@ def main():
     # ld = [d for d in ld if d < datetime.date(2021,6,1)]
     # ld = [d for d in ld if d.year==2021 and d.month==6]
     # ld = [d for d in ld if d.year==2020 and d.month==3]
-    # ld = [datetime.date(2021, 6, 25)]
+    ld = [datetime.date(2021, 6, 30)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'usdkrw200vol', plot="N", execution="vwap", 
+        result_ema = tradeEma(day, 'usdkrw200vol', plot="Y", execution="vwap", 
                               fast_coeff=0.5,
                               slow_coeff=0.05,
                               margin = 0.5)

@@ -16,14 +16,15 @@ def main():
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC(market_table_name='ktbf_day').index)
     # ld = [d for d in ld if d.year==2020 ]
-    # ld = [d for d in ld if d.year==2021 and d.month == 6 ]
-    # ld = [datetime.date(2021, 6, 25)]
+    # ld = [d for d in ld if d.year==2021 and d.month == 6 and d.day > 25]
+    # ld = [datetime.date(2021, 6, 30)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
+    dfsig = pd.DataFrame()
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'ktbf200vol', plot="Y", execution="vwap", 
+        result_ema = tradeEma(day, 'ktbf200vol', plot="N", execution="vwap", 
                               fast_coeff=0.5,
                               slow_coeff=0.1,
                               margin = 0.5)
@@ -53,14 +54,19 @@ def main():
         num_trade_avg = round(dfpl.num_trade.mean(), 1)
         print(f'Cumul | cumsum: {cumsum}  mean:{mean}  SR: {sr}  trades/day: {num_trade_avg}',
               "\n---------------------------------------------------------------")
-    
+        
+        #signal분석용 dfsig누적
+        dfsig = dfsig.append(result_ema['df'])
+
     dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
     dfpl.drop(columns=['date'], inplace=True)
     
-    return dfpl, result_ema['df']
+    
+    
+    return dfpl, dfsig
 
 if __name__ == "__main__":
-    dfpl, sig = main()
+    dfpl, dfsig = main()
     
     dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
     print(dfpl_group)
