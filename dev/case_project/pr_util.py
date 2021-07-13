@@ -105,7 +105,7 @@ def auction_dates(list_maturity=[3,5,10,20,30,50]):
     return auct_dates
 
    
-def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0, shift=0, sectype='yield'):
+def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0, shift=0, sectype='yield', filename='default.jpg'):
     """
     intraday mkt_data와 날짜리스트를 받아서
     날짜들에 해당하는 consec_days plotting
@@ -140,7 +140,7 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
     plot_name = plot_name + " | std=" + str(stdev)
     plot_name = plot_name + " | odds_up=" + str(odds_of_up) + "%"
         
-    ax.set_xlabel(plot_name, fontdict=font)
+    ax.set_xlabel(filename, fontdict=font)
 
     #charting을 위한 기초정보들 정의    
     length_of_a_day = du.standard_length_of_day(df_mkt)
@@ -209,6 +209,7 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
     y_major_ticks = np.arange(-y_abxmax_adj, y_abxmax_adj, 20)
     y_minor_ticks = np.arange(-y_abxmax_adj, y_abxmax_adj, 10)
     
+    
     ax.set_xticks(x_major_ticks)
     ax.set_xticks(x_minor_ticks, minor=True)
     ax.set_yticks(y_major_ticks)
@@ -218,6 +219,28 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
     ax.grid(which='minor', color='grey', linewidth=0.4,linestyle=':')
     ax.yaxis.set_ticks_position('right')
     
+ 
+    # 날짜 입력
+    # num_x_major = len(x_major_ticks)
+    # mid = int(num_x_major/2)
+    
+    # for i, item in enumerate(x_major_ticks):
+    #     i - mid 
+    #     if i >0 and i < num_x_major :
+    #         ax.text(text_x, df['vwap'].max(), str(i-mid), 
+    #                 ha="center", color="c")
+    
+    # 기준숫자 플로팅 상단에 입
+    i = 0
+    num_x_major = len(x_major_ticks)
+    mid = int(num_x_major/2)
+    text_str = i - mid
+    ax.text(x_major_ticks[0]/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
+    i+=1    
+    for pre, post in zip(x_major_ticks, x_major_ticks[1:]) :
+        text_str = i - mid
+        ax.text((pre+post)/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
+        i+=1
     
     """legend location, ncol"""
     ax.legend(loc='upper left', ncol=2, bbox_to_anchor=(0,-0.1))
@@ -228,7 +251,12 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
         
     plt.axhline(color='black', linewidth=0.7, linestyle='--')
  
+    plt.savefig('D:\\dev\\data\\'+filename+'.jpg', bbox_inches='tight')
+    # plt.savefig('D:\\dev\\data\\default2.jpeg')
     plt.show()
+    
+    
+    
     """End of plot_mltly function"""
     
     

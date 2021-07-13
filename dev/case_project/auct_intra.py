@@ -29,33 +29,79 @@ ld_all = du.get_date_list(df10)
 from datetime import datetime
 timenote = datetime.now().strftime("%Y/%m/%d, %H:%M")
 
-CASE = "AUCT30"
-
-PREV_NUM = -5
-NEXT_NUM = 5
-OFFSET = 1
-NUMPLOT = 6
+CASE = ['AUCT3', 'AUCT5','AUCT10','AUCT30']
+ASSET =['KTBF3Y','KTBF10Y']
+NUMPLOT = [4,5,6]
+OFFSET = [-2,-1,0,1,2]
+PREV_NUM = [-5]
+NEXT_NUM = [5]
 
 df10 = loadmkt.update_futures_rt(df10, fut_name='10y')
 df3 = loadmkt.update_futures_rt(df3, fut_name='3y')
 dfktbsp = loadmkt.update_futures_rt(dfktbsp, fut_name='sp')
 
 
-# dates = du.read_casedates(CASE, "KR", nth_in_year=[1] )[:7] #매년 첫 입찰
-dates = du.read_casedates(CASE, "KR", )[:NUMPLOT] #최근 입찰
+# """short test"""
+# case='AUCT5'
+# asset='KTBF10Y'
+# numplot = 5
+# offset = 0
+# prev_num = -5
+# next_num = 5
 
 
-dates = du.date_offset_list(ld_all, dates, OFFSET)
-# dates += [pd.Timestamp(2021,4,19)]
-dates = du.remove_yyyymm(dates, [202002, 202003, 202004,]) #코로나 변동월 제거
-# dates = du.select_months(dates, [1,2,3,4])
-# dates = dates[:7] + du.select_months(dates, [1])[1:]
-# dates = du.select_years(dates, [2015, 2016, 2017, 2019, 2020])
+# filename = f'{case}_{asset}_{numplot}series_{offset}off_{prev_num}prev_{next_num}next'
+# # OFFSET = 1
+# # NUMPLOT = 6
 
-# dates = dates[:5]
+# # dates = du.read_casedates(CASE, "KR", nth_in_year=[1] )[:7] #매년 첫 입찰
+# dates = du.read_casedates(case, "KR", )[:numplot] #최근 입찰
 
-pu.plot_multly(df10, dates, CASE+" LKTB "+timenote, PREV_NUM, NEXT_NUM, shift=0)
 
-pu.plot_multly(df3, dates, CASE+" KTBF3Y "+timenote, PREV_NUM, NEXT_NUM)
-pu.plot_multly(dfktbsp, dates, CASE+" SP "+timenote, PREV_NUM, NEXT_NUM)
-# pu.plot_multly(dfhanmi, dates, CASE+" HANMI "+timenote, PREV_NUM, NEXT_NUM)
+# dates = du.date_offset_list(ld_all, dates, offset)
+# # dates += [pd.Timestamp(2021,4,19)]
+# dates = du.remove_yyyymm(dates, [202002, 202003, 202004,]) #코로나 변동월 제거
+# # dates = du.select_months(dates, [1,2,3,4])
+# # dates = dates[:7] + du.select_months(dates, [1])[1:]
+# # dates = du.select_years(dates, [2015, 2016, 2017, 2019, 2020])
+
+# # dates = dates[:5]
+
+# # pu.plot_multly(df10, dates, CASE+" LKTB "+timenote, PREV_NUM, NEXT_NUM, shift=0)
+# if asset == 'KTBF3Y':
+#     pu.plot_multly(df3, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+# elif asset == 'KTBF10Y':
+#     pu.plot_multly(df10, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+# # pu.plot_multly(dfktbsp, dates, CASE+" SP "+timenote, PREV_NUM, NEXT_NUM)
+# # pu.plot_multly(dfhanmi, dates, CASE+" HANMI "+timenote, PREV_NUM, NEXT_NUM)
+
+for case in CASE :
+    for asset in ASSET :
+        for numplot in NUMPLOT :
+            for offset in OFFSET :
+                for prev_num in PREV_NUM :
+                    for next_num in NEXT_NUM:
+                        filename = f'{case}_{asset}_{numplot}series_{offset}off_{prev_num}prev_{next_num}next'
+                        # OFFSET = 1
+                        # NUMPLOT = 6
+                        
+                        # dates = du.read_casedates(CASE, "KR", nth_in_year=[1] )[:7] #매년 첫 입찰
+                        dates = du.read_casedates(case, "KR", )[:numplot] #최근 입찰
+                        
+                        
+                        dates = du.date_offset_list(ld_all, dates, offset)
+                        # dates += [pd.Timestamp(2021,4,19)]
+                        dates = du.remove_yyyymm(dates, [202002, 202003, 202004,]) #코로나 변동월 제거
+                        # dates = du.select_months(dates, [1,2,3,4])
+                        # dates = dates[:7] + du.select_months(dates, [1])[1:]
+                        # dates = du.select_years(dates, [2015, 2016, 2017, 2019, 2020])
+                        
+                        # dates = dates[:5]
+                        
+                        # pu.plot_multly(df10, dates, CASE+" LKTB "+timenote, PREV_NUM, NEXT_NUM, shift=0)
+                        if asset == 'KTBF3Y':
+                            pu.plot_multly(df3, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+                        elif asset == 'KTBF10Y':
+                            pu.plot_multly(df10, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+                        # pu.plot_multly(dfktbsp, dates, CASE+" SP "+timenote, PREV_NUM, NEXT_NUM)
+                        # pu.plot_multly(dfhanmi, dates, CASE+" HANMI "+timenote, PREV_NUM, NEXT_NUM)
