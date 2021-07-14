@@ -105,7 +105,7 @@ def auction_dates(list_maturity=[3,5,10,20,30,50]):
     return auct_dates
 
    
-def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0, shift=0, sectype='yield', filename='default.jpg'):
+def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0, shift=0, sectype='yield', offset = 0, filename='default.jpg'):
     """
     intraday mkt_data와 날짜리스트를 받아서
     날짜들에 해당하는 consec_days plotting
@@ -234,11 +234,11 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
     i = 0
     num_x_major = len(x_major_ticks)
     mid = int(num_x_major/2)
-    text_str = i - mid
+    text_str = i - mid + offset
     ax.text(x_major_ticks[0]/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
     i+=1    
     for pre, post in zip(x_major_ticks, x_major_ticks[1:]) :
-        text_str = i - mid
+        text_str = i - mid + offset
         ax.text((pre+post)/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
         i+=1
     

@@ -29,12 +29,12 @@ ld_all = du.get_date_list(df10)
 from datetime import datetime
 timenote = datetime.now().strftime("%Y/%m/%d, %H:%M")
 
-CASE = ['AUCT3', 'AUCT5','AUCT10','AUCT30']
-ASSET =['KTBF3Y','KTBF10Y']
-NUMPLOT = [4,5,6]
-OFFSET = [-2,-1,0,1,2]
-PREV_NUM = [-5]
-NEXT_NUM = [5]
+CASE = ['AUCT3', 'AUCT5','AUCT10','AUCT30','BOKMPC']
+ASSET =['KTBF3Y','KTBF10Y','SP']
+NUMPLOT = [6,7,8]
+OFFSET = [-3,-2,-1,0,1,2,3]
+PREV_NUM = [-4,-3,-2]
+NEXT_NUM = [2,3,4]
 
 df10 = loadmkt.update_futures_rt(df10, fut_name='10y')
 df3 = loadmkt.update_futures_rt(df3, fut_name='3y')
@@ -100,8 +100,10 @@ for case in CASE :
                         
                         # pu.plot_multly(df10, dates, CASE+" LKTB "+timenote, PREV_NUM, NEXT_NUM, shift=0)
                         if asset == 'KTBF3Y':
-                            pu.plot_multly(df3, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+                            pu.plot_multly(df3, dates, case+' '+asset+' '+timenote, prev_num, next_num, offset=offset, filename=filename)
                         elif asset == 'KTBF10Y':
-                            pu.plot_multly(df10, dates, case+' '+asset+' '+timenote, prev_num, next_num, filename=filename)
+                            pu.plot_multly(df10, dates, case+' '+asset+' '+timenote, prev_num, next_num, offset=offset, filename=filename)
+                        elif asset == 'SP':
+                            pu.plot_multly(dfktbsp, dates, case+' '+asset+' '+timenote, prev_num, next_num, offset=offset, filename=filename)
                         # pu.plot_multly(dfktbsp, dates, CASE+" SP "+timenote, PREV_NUM, NEXT_NUM)
                         # pu.plot_multly(dfhanmi, dates, CASE+" HANMI "+timenote, PREV_NUM, NEXT_NUM)
