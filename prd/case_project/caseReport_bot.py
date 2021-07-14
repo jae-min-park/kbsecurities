@@ -3,14 +3,21 @@ import datetime
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Updater, Filters
 import pymysql
+import logging
 
 # test_token = '1767824468:AAFBSQzCNlzKCKVqYK7HlwqUlzDNqBibVdM'
 prd_token = '1721072898:AAHowGdDffQr-44g0xkHAq_-YlinO9fPtME'
 token = prd_token
 
-bot = telegram.Bot(token)
-updates = bot.getUpdates()
-
+logfilename = 'D:\\dev\\log\\prd\\'+str(datetime.datetime.today())[:10] +'.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(logfilename),
+        logging.StreamHandler()
+    ]
+)
 
 test_db = pymysql.connect(user='admin',
                       passwd='se21121',
@@ -31,6 +38,9 @@ def getUserList():
     return arr
 
 
+bot = telegram.Bot(token)
+updates = bot.getUpdates()
+
 #updater
 updater = Updater(token=token, use_context=True)
 dispatcher = updater.dispatcher
@@ -48,11 +58,11 @@ assetList = ['국채3년','국채10년', '3선','10선','스플']
 
 #command handler
 def start(update, context):
-    print(datetime.datetime.now(), update.effective_chat.id)
+    logging.info('/start '+str(update.effective_chat.id))
     context.bot.send_message(chat_id=update.effective_chat.id, text ="/help : 사용법 보기\n/cases : 이벤트 리스트 보기\n/assets : 자산 리스트 보기")
     
 def help(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text ="이벤트 종목 오프셋 최근날자들수 이전날들 이후날들\n(이벤트,종목은 필수입력, 나머지는 기본값 각 0, 6, -3, 2)\n을 타이핑 하시면 차트 이미지가 로드됩니다.\n/cases 와 /assets 에서 이벤트, 종목 참조 가능\n예) 10년입찰 10선 -1")
+    context.bot.send_message(chat_id=update.effective_chat.id, text ="이벤트 종목 오프셋 최근날자들수 이전날들 이후날들\n(이벤트는 필수입력, 종목은 옵션이되 입력없으면 3선,10선,스플. 나머지는 기본값 각 0, 6, -3, 2)\n을 타이핑 하시면 차트 이미지가 로드됩니다.\n/cases 와 /assets 에서 이벤트, 종목 참조 가능\n예) 10년입찰 10선 -1")
     
 def cases(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text ='\n'.join(caseList))
@@ -119,11 +129,11 @@ def echo(update, context):
     if asset == 'ALL' :
         for item in ['KTBF3Y', 'KTBF10Y', 'SP']:
             filename = f'{case}_{item}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
-            print(datetime.datetime.now(), user_id, filename)
+            logging.info(f'{update.effective_chat.id} /echo_all {filename}')
             context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
     else :
         filename = f'{case}_{asset}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
-        print(datetime.datetime.now(), user_id, filename)
+        logging.info(f'{update.effective_chat.id} /echo {filename}')
         context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
     
 start_handler = CommandHandler('start',start)
