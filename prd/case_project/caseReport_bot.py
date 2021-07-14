@@ -73,6 +73,8 @@ def assets(update, context):
 #message handler
 def echo(update, context):
     user_id = update.effective_chat.id
+    logging.info(f'{user_id} /echo {update.message.text}')
+    
     users = getUserList()
     if user_id not in users:
         return
