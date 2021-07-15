@@ -4,7 +4,9 @@ from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Updater, Filters
 import pymysql
 import logging
-
+import auct_intra
+import loadmkt
+import pandas as pd
 
 test_token = '1767824468:AAFBSQzCNlzKCKVqYK7HlwqUlzDNqBibVdM'
 # prd_token = '1721072898:AAHowGdDffQr-44g0xkHAq_-YlinO9fPtME'
@@ -42,6 +44,17 @@ def getUserList():
         arr.append(item['user'])
     return arr
 
+df = pd.DataFrame(columns=(['일자','시간','종가']))
+df10 = loadmkt.read_ktb10y()
+df3 = loadmkt.read_ktb3y()
+
+dfktbsp = loadmkt.read_ktbsp()
+# dfhanmi = loadmkt.read_hanmi()
+
+df10 = loadmkt.update_futures_rt(df10, fut_name='10y')
+df3 = loadmkt.update_futures_rt(df3, fut_name='3y')
+dfktbsp = loadmkt.update_futures_rt(dfktbsp, fut_name='sp')
+
 # users = [1381723672, 42114728]
 # users = getUserList()
 # print(updates[0].message.chat_id)
@@ -50,6 +63,7 @@ def getUserList():
 #         # print(u[0].message.chat_id)
 #         bot.sendMessage(chat_id = u.message.chat_id, text='서버 점검이 있었습니다. /start 로 시작해 보아요')
 
+users = getUserList()
 
 #updater
 updater = Updater(token=token, use_context=True)
@@ -83,8 +97,8 @@ def assets(update, context):
 #message handler
 def echo(update, context):
     user_id = update.effective_chat.id
-    users = getUserList()
     if user_id not in users:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="회원 가입을 위해 관리자에게 연락해 주세요")
         return
     
     logging.info(f'{user_id} /echo {update.message.text}')
@@ -116,19 +130,24 @@ def echo(update, context):
                     case = 'BOKMPC'
             else :
                 context.bot.send_message(chat_id=update.effective_chat.id, text="/cases list에 있는 이벤트를 입력해 주세요")
+                return
         if i == 1 : 
             if item in assetList :
                 if item in ['국채3년','3선'] :
                     asset = 'KTBF3Y'
+                    df = df3
                 elif item in ['국채10년','10선'] :
                     asset = 'KTBF10Y'
+                    df = df10
                 elif item in ['스플']:
                     asset = 'SP'
+                    df = dfktbsp
             elif int(item) in [-3,-2,-1,0,1,2,3] :
                 asset = 'ALL'
                 offset = int(item)
             else :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="/assets list에 있는 종목이나 offset을 입력해 주세요")
+                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -3~3사이의 정수 offset을 입력해 주세요")
+                return
         if i == 2 and asset != 'ALL':
             offset = int(item)
         elif i == 2 :
@@ -150,18 +169,25 @@ def echo(update, context):
 
     if asset == 'ALL' :
         for item in ['KTBF3Y', 'KTBF10Y', 'SP']:
+            if item == 'KTBF3Y':
+                df = df3
+            elif item == 'KTBF10Y':
+                df = df10
+            elif item == 'SP':
+                df = dfktbsp
             filename = f'{case}_{item}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
             logging.info(f'{update.effective_chat.id} /echo_all {filename}')
             # logging.info('/echo_all '+str(update.effective_chat.id)+' '+filename)
-            
-            context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
+            auct_intra.setPlot(df, case, item, offset, series, _prev, _next)
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
     else :
         filename = f'{case}_{asset}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
         logging.info(f'{update.effective_chat.id} /echo {filename}')
         # logging.info('/echo '+str(update.effective_chat.id)+' '+filename)
             
         # context.bot.send_message(chat_id=update.effective_chat.id, text=filename)
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
+        auct_intra.setPlot(df, case, asset, offset, series, _prev, _next)
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
     
     # user_text = '사용법은 /start 로 참고해 주세요'
     # # print(user_id, user_text)

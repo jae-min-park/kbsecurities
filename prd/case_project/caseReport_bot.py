@@ -3,7 +3,10 @@ import datetime
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, MessageHandler, Updater, Filters
 import pymysql
+import pandas as pd
 import logging
+import auct_intra
+import loadmkt
 
 # test_token = '1767824468:AAFBSQzCNlzKCKVqYK7HlwqUlzDNqBibVdM'
 prd_token = '1721072898:AAHowGdDffQr-44g0xkHAq_-YlinO9fPtME'
@@ -19,16 +22,15 @@ logging.basicConfig(
     ]
 )
 
-test_db = pymysql.connect(user='admin',
+def getUserList():
+    test_db = pymysql.connect(user='admin',
                       passwd='se21121',
                        host = '211.232.156.57',
                       # host='127.0.0.1',
                       db='casereport',
                       charset='utf8')
 
-cursor = test_db.cursor(pymysql.cursors.DictCursor)
-
-def getUserList():
+    cursor = test_db.cursor(pymysql.cursors.DictCursor)
     sql = "SELECT user FROM users;"
     cursor.execute(sql)
     result = cursor.fetchall()
@@ -37,7 +39,17 @@ def getUserList():
         arr.append(item['user'])
     return arr
 
+users = getUserList()
 
+df = pd.DataFrame(columns=(['일자','시간','종가']))
+df10 = loadmkt.read_ktb10y()
+df3 = loadmkt.read_ktb3y()
+dfktbsp = loadmkt.read_ktbsp()
+# dfhanmi = loadmkt.read_hanmi()
+df10 = loadmkt.update_futures_rt(df10, fut_name='10y')
+df3 = loadmkt.update_futures_rt(df3, fut_name='3y')
+dfktbsp = loadmkt.update_futures_rt(dfktbsp, fut_name='sp')
+#%%
 bot = telegram.Bot(token)
 updates = bot.getUpdates()
 
@@ -54,7 +66,6 @@ assetList = ['국채3년','국채10년', '3선','10선','스플']
 #              '국채10년-국채3년','국채10년-국채5년','국채30년-국채10년','국채30년-국채20년','2X국채5년-국채3년-국채10년','2X국채10년-국채3년-국채30년','2X국채10년-국채5년-국채30년',
 #              'KRWIRS2년-통안증권2년','KRWIRS3년-통안증권3년','KRWIRS5년-통안증권5년','미국채권10년-국채10년','미국채권10년-미국채권2년','미국채권30년-미국채권5년','미국채권30년-미국채권10년',
 #              '2X미국채권5년-미국채권2년-미국채권10년','2X미국채권10년-미국채권5년-미국채권30년','금융채AAA1.5년-통안증권1.5년','금융채AAA2년-통안증권2년','금융채AA+1년-통안증권1년','금융채AA+1.5년-통안증권1.5년','금융채AA+2년-통안증권2년']
-
 
 #command handler
 def start(update, context):
@@ -75,8 +86,8 @@ def echo(update, context):
     user_id = update.effective_chat.id
     logging.info(f'{user_id} /echo {update.message.text}')
     
-    users = getUserList()
     if user_id not in users:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="회원 가입을 위해 관리자에게 연락해 주세요")
         return
     
     user_text = ' '.join(update.message.text.split())
@@ -104,6 +115,7 @@ def echo(update, context):
                     case = 'BOKMPC'
             else :
                 context.bot.send_message(chat_id=update.effective_chat.id, text="/cases list에 있는 이벤트를 입력해 주세요")
+                return
         if i == 1 : 
             if item in assetList :
                 if item in ['국채3년','3선'] :
@@ -116,7 +128,8 @@ def echo(update, context):
                 asset = 'ALL'
                 offset = int(item)
             else :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="/assets list에 있는 종목이나 offset을 입력해 주세요")
+                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -3~3사이의 정수 offset을 입력해 주세요")
+                return
         if i == 2 and asset != 'ALL':
             offset = int(item)
         elif i == 2 :
@@ -130,14 +143,26 @@ def echo(update, context):
 
     if asset == 'ALL' :
         for item in ['KTBF3Y', 'KTBF10Y', 'SP']:
+            if item == 'KTBF3Y':
+                df = df3
+            elif item == 'KTBF10Y':
+                df = df10
+            elif item == 'SP':
+                df = dfktbsp
             filename = f'{case}_{item}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
             logging.info(f'{update.effective_chat.id} /echo_all {filename}')
-            context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
+            # logging.info('/echo_all '+str(update.effective_chat.id)+' '+filename)
+            auct_intra.setPlot(df, case, item, offset, series, _prev, _next)
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
     else :
         filename = f'{case}_{asset}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
         logging.info(f'{update.effective_chat.id} /echo {filename}')
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\data\\'+filename,'rb'))
-    
+        # logging.info('/echo '+str(update.effective_chat.id)+' '+filename)
+            
+        # context.bot.send_message(chat_id=update.effective_chat.id, text=filename)
+        auct_intra.setPlot(df, case, asset, offset, series, _prev, _next)
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
+  
 start_handler = CommandHandler('start',start)
 usage_handler = CommandHandler('help',help)
 cases_handler = CommandHandler('cases',cases)

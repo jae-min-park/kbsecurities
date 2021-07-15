@@ -231,16 +231,15 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
     #                 ha="center", color="c")
     
     # 기준숫자 플로팅 상단에 입
-    i = 0
     num_x_major = len(x_major_ticks)
-    mid = int(num_x_major/2)
-    text_str = i - mid + offset
+
+    text_str = prev_num + offset
+    # text_str = i - mid + offset
     ax.text(x_major_ticks[0]/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
-    i+=1    
     for pre, post in zip(x_major_ticks, x_major_ticks[1:]) :
-        text_str = i - mid + offset
+        text_str += 1
+        # text_str = i - mid + offset
         ax.text((pre+post)/2, np.max(y_major_ticks), text_str, ha="center", fontsize=15)
-        i+=1
     
     """legend location, ncol"""
     ax.legend(loc='upper left', ncol=2, bbox_to_anchor=(0,-0.1))
@@ -251,7 +250,7 @@ def plot_multly(df_mkt, ld_plot, plot_name="cmpr plot", prev_num=-3, next_num=0,
         
     plt.axhline(color='black', linewidth=0.7, linestyle='--')
  
-    plt.savefig('D:\\dev\\data\\'+filename+'.jpg', bbox_inches='tight')
+    plt.savefig('D:\\dev\\case_data\\'+filename+'.jpg', bbox_inches='tight')
     # plt.savefig('D:\\dev\\data\\default2.jpeg')
     plt.show()
     
