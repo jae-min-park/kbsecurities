@@ -120,10 +120,13 @@ def echo(update, context):
             if item in assetList :
                 if item in ['국채3년','3선'] :
                     asset = 'KTBF3Y'
+                    df = df3
                 elif item in ['국채10년','10선'] :
                     asset = 'KTBF10Y'
+                    df = df10
                 elif item in ['스플']:
                     asset = 'SP'
+                    df = dfktbsp
             elif int(item) in [-3,-2,-1,0,1,2,3] :
                 asset = 'ALL'
                 offset = int(item)
