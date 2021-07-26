@@ -14,8 +14,11 @@ cursor = test_db.cursor(pymysql.cursors.DictCursor)
 """
 엑셀 10초 데이터를 DB에 삽입해 주는 함수
 """
-def insert10secData(cursor, df_excel, table):
-    df = df_excel[1]
+def insert10secData(df_excel, table):
+    
+    df = df_excel[0]
+    df = df[['코드','일자','시간','시가','고가','저가','현재가','거래량']]
+    df.dropna(inplace=True)
     print(df)
     
     for i in tqdm(range(len(df.index))) :
@@ -36,9 +39,11 @@ def insert10secData(cursor, df_excel, table):
 """
 엑셀 틱 데이터를 DB에 삽입해 주는 함수
 """
-def insertTickData(cursor, df_excel, table):
+def insertTickData(df_excel, table):
 
-    df = df_excel[2]
+    df = df_excel[0]
+    df = df[['코드.1','일자.1','시간.1','현재가.1','거래량.1']]
+    df.dropna(inplace=True)
     print(df)
     
     for i in tqdm(range(len(df.index))) :
@@ -54,27 +59,26 @@ def insertTickData(cursor, df_excel, table):
 
 
     
-
 """국10년선물 10초봉"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선10년\lktb_data.xlsx', sheet_name=[1])
-insert10secData(cursor, df_excel, 'lktbf_10sec')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선10년\lktb_data.xlsx',  sheet_name=[0], header=4)
+insert10secData(df_excel, 'lktbf_10sec')
 
 """국10년선물 틱데이터"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선10년\lktb_data.xlsx', sheet_name=[2])
-insertTickData(cursor, df_excel, 'lktbftick')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선10년\lktb_data.xlsx',  sheet_name=[0], header=4)
+insertTickData(df_excel, 'lktbftick')
 
 """국3년선물 10초봉"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선3년\ktb_data.xlsx', sheet_name=[1])
-insert10secData(cursor, df_excel, 'ktbf_10sec')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선3년\ktb_data.xlsx', sheet_name=[0], header=4)
+insert10secData(df_excel, 'ktbf_10sec')
 
 """국3년선물 틱데이터"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선3년\ktb_data.xlsx', sheet_name=[2])
-insertTickData(cursor, df_excel, 'ktbftick')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선3년\ktb_data.xlsx', sheet_name=[0], header=4)
+insertTickData(df_excel, 'ktbftick')
 
 """달러원선물 10초봉"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\달러원선물\krwusd_data.xlsx', sheet_name=[1])
-insert10secData(cursor, df_excel, 'usdkrw_10sec')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\달러원선물\krwusd_data.xlsx', sheet_name=[0], header=4)
+insert10secData(df_excel, 'usdkrw_10sec')
 
 """달러원선물 틱데이터"""
-df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\달러원선물\krwusd_data.xlsx', sheet_name=[2])
-insertTickData(cursor, df_excel, 'usdkrwtick')
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\달러원선물\krwusd_data.xlsx', sheet_name=[0], header=4)
+insertTickData(df_excel, 'usdkrwtick')

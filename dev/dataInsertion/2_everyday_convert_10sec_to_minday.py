@@ -48,9 +48,8 @@ def insertDayData(cursor, df, table):
 
 start_date = str(datetime.datetime.today())[:10]
 end_date = str(datetime.datetime.today())[:10]
-# start_date = '2000-10-01'
-# end_date = '2021-06-03'
-
+# start_date = '2013-09-17'
+# end_date = '2017-12-17'
 
 """10년선물 1분봉 처리"""
 df = setDfData(start_date, end_date, 'lktbf_10sec')

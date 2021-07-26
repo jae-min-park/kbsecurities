@@ -36,6 +36,45 @@ def insertExcelData(cursor, df, table):
         cursor.execute(sql)
     test_db.commit()
 
+
+def insertUtil(cursor, date, time, vwap,close, table):
+    sql = "insert into "+table+" (date, time, vwap, close) values ('"  + date + "','" + time + "','"+ vwap + "','" + close +"'" + ');'
+    cursor.execute(sql)
+    test_db.commit()
+    
+def parseVolandCommit2(dftick, vol_bin, table):
+    
+    vol_list = []
+    prc_list = []
+    
+    i_resampled = 0
+    
+    for i in tqdm(dftick.index):
+        vol = dftick.at[i, 'volume']
+        prc = dftick.at[i, 'close']
+            
+        vol_list.append(vol)
+        prc_list.append(prc)
+        
+        cumsum_vol = sum(vol_list)
+        
+        if cumsum_vol >= vol_bin:
+            bins_made = int(cumsum_vol / vol_bin)
+            leftover = cumsum_vol % vol_bin
+            vol_list[-1] = vol_list[-1] - leftover
+            vwap = sum(np.array(prc_list) * np.array(vol_list)) / (bins_made * vol_bin)
+            
+            for n in range(bins_made):
+                print(table, dftick.at[i, 'date'], str(dftick.at[i, 'time'])[7:])
+                insertUtil(cursor, str(dftick.at[i, 'date']), str(dftick.at[i, 'time'])[7:], str(vwap), str(dftick.at[i, 'close']), table)
+                i_resampled += 1
+            
+            vol_list = [leftover] #[0]이어도 무관
+            prc_list = [prc]
+        
+        else:
+            pass
+
 def parseVolandCommit(dftick, vol_bin, table):
     
     dfbinned = pd.DataFrame(columns=['date','time','vwap','price'])
@@ -103,8 +142,9 @@ def parseVolandCommit(dftick, vol_bin, table):
 
 start_date = str(datetime.datetime.today())[:10]
 end_date = str(datetime.datetime.today())[:10]
-# start_date = '2021-06-12'
-# end_date = '2021-06-14'
+# start_date = '2013-09-17'
+# end_date = '2019-09-18'
+
         
 """ 10년국채 선물 50vol"""
 vol_option='lktbftick'
