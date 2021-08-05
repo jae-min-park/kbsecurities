@@ -39,7 +39,6 @@ def getUserList():
         arr.append(item['user'])
     return arr
 
-users = getUserList()
 
 df = pd.DataFrame(columns=(['일자','시간','종가']))
 df10 = loadmkt.read_ktb10y()
@@ -50,6 +49,7 @@ df10 = loadmkt.update_futures_rt(df10, fut_name='10y')
 df3 = loadmkt.update_futures_rt(df3, fut_name='3y')
 dfktbsp = loadmkt.update_futures_rt(dfktbsp, fut_name='sp')
 #%%
+users = getUserList()
 bot = telegram.Bot(token)
 updates = bot.getUpdates()
 
@@ -60,6 +60,7 @@ dispatcher = updater.dispatcher
 
 caseList = ['10년입찰','30년입찰','3년입찰','5년입찰','금통위']
 assetList = ['국채3년','국채10년', '3선','10선','스플']
+assetListforShow = ['3선','10선','스플']
 # caseList = ['AUCT30','AUCT10','AUCT5','AUCT3','미국10년입찰','미국5년입찰','분기첫날','금융위','분기첫날']
 # assetList = ['KTB3Y','KTB5Y','LKTB','KTB20Y','KTB30Y','통안1년','통안1.5년','통안2년','KRWIRS1년','KRWIRS1.5년','KRWIRS2년','KRWIRS3년','KRWIRS5년','KRWIRS10년','KRWIRS20년','KRWIRS30년',
 #              '미국채권2년','미국채권5년','미국채권10년','미국채권30년','금융채AAA1년','금융채AAA1.5년','금융채AAA2년','금융채AA+1년','금융채AA+1.5년','금융채AA+2년',
@@ -70,7 +71,7 @@ assetList = ['국채3년','국채10년', '3선','10선','스플']
 #command handler
 def start(update, context):
     logging.info('/start '+str(update.effective_chat.id))
-    context.bot.send_message(chat_id=update.effective_chat.id, text ="/help : 사용법 보기\n/cases : 이벤트 리스트 보기\n/assets : 자산 리스트 보기")
+    context.bot.send_message(chat_id=update.effective_chat.id, text ="/help : 사용법 보기\n/cases : 이벤트 리스트 보기\n/assets : 종목 리스트 보기")
     
 def help(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text ="이벤트 종목 오프셋 최근날자들수 이전날들 이후날들\n(이벤트는 필수입력, 종목은 옵션이되 입력없으면 3선,10선,스플. 나머지는 기본값 각 0, 6, -3, 2)\n을 타이핑 하시면 차트 이미지가 로드됩니다.\n/cases 와 /assets 에서 이벤트, 종목 참조 가능\n예) 10년입찰 10선 -1")
@@ -79,7 +80,7 @@ def cases(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text ='\n'.join(caseList))
 
 def assets(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text ='\n'.join(assetList))
+    context.bot.send_message(chat_id=update.effective_chat.id, text ='\n'.join(assetListforShow))
     
 #message handler
 def echo(update, context):
@@ -127,11 +128,11 @@ def echo(update, context):
                 elif item in ['스플']:
                     asset = 'SP'
                     df = dfktbsp
-            elif int(item) in [-3,-2,-1,0,1,2,3] :
+            elif int(item) in list(range(-20,20,1)) :
                 asset = 'ALL'
                 offset = int(item)
             else :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -3~3사이의 정수 offset을 입력해 주세요")
+                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -10~10사이의 정수 offset을 입력해 주세요")
                 return
         if i == 2 and asset != 'ALL':
             offset = int(item)
