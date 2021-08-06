@@ -319,6 +319,24 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
             # last_df.loc[move_date,'10년'] = summary_df.loc['10년', '은증']
             last_df.loc[i,'15년~20년_avg'] += summary_df.loc['15년~20년', '은증']
             last_df.loc[i,'30년이상_avg'] += summary_df.loc['30년이상', '은증']
+            
+            last_df.loc[i,'10년미만_avg'] += (summary_df.loc['2년이하', '은증']+
+                                           summary_df.loc['3년', '은증']+
+                                           summary_df.loc['5년', '은증']+
+                                           summary_df.loc['7년', '은증']
+                                           )
+            last_df.loc[i,'10년이상_avg'] += (summary_df.loc['10년', '은증']+
+                                           summary_df.loc['15년~20년', '은증']+
+                                           summary_df.loc['30년이상', '은증']
+                                           )
+            last_df.loc[i,'total_avg'] += (summary_df.loc['2년이하', '은증']+
+                                           summary_df.loc['3년', '은증']+
+                                           summary_df.loc['5년', '은증']+
+                                           summary_df.loc['7년', '은증']+
+                                           summary_df.loc['10년', '은증']+
+                                           summary_df.loc['15년~20년', '은증']+
+                                           summary_df.loc['30년이상', '은증']
+                                           )
             # elif opt == '외국인':
             #     last_df.loc[move_date,'3선'] = df.loc['3선','외국인'] + df.loc['3선','외국인']
             #     last_df.loc[move_date,'3년'] = summary_df.loc['3년', '외인'] - last_df.loc[move_date,'3선']
@@ -451,6 +469,24 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
         # last_df.loc[move_date,'10년'] = summary_df.loc['10년', '은증']
         last_df.loc[i,'15년~20년'] += summary_df.loc['15년~20년', '은증']
         last_df.loc[i,'30년이상'] += summary_df.loc['30년이상', '은증']
+
+        last_df.loc[i,'10년미만'] += (summary_df.loc['2년이하', '은증']+
+                               summary_df.loc['3년', '은증']+
+                               summary_df.loc['5년', '은증']+
+                               summary_df.loc['7년', '은증']
+                               )
+        last_df.loc[i,'10년이상'] += (summary_df.loc['10년', '은증']+
+                               summary_df.loc['15년~20년', '은증']+
+                               summary_df.loc['30년이상', '은증']
+                               )
+        last_df.loc[i,'total'] += (summary_df.loc['2년이하', '은증']+
+                               summary_df.loc['3년', '은증']+
+                               summary_df.loc['5년', '은증']+
+                               summary_df.loc['7년', '은증']+
+                               summary_df.loc['10년', '은증']+
+                               summary_df.loc['15년~20년', '은증']+
+                               summary_df.loc['30년이상', '은증']
+                               )
         # elif opt == '외국인':
         #     last_df.loc[move_date,'3선'] = df.loc['3선','외국인'] + df.loc['3선','외국인']
         #     last_df.loc[move_date,'3년'] = summary_df.loc['3년', '외인'] - last_df.loc[move_date,'3선']
@@ -473,6 +509,11 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
     last_df['10년_avg'] /= len(y30_list)
     last_df['15년~20년_avg'] /= len(y30_list)
     last_df['30년이상_avg'] /= len(y30_list)
+
+    last_df['10년미만_avg'] /= len(y30_list)
+    last_df['10년이상_avg'] /= len(y30_list)    
+    last_df['total_avg'] /= len(y30_list)
+    
     
     tmp = last_df.iloc[0].copy()
     for i in last_df.index:
@@ -486,7 +527,10 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
     df6 = last_df[['10년','10년_avg']]
     df7 = last_df[['15년~20년','15년~20년_avg']]
     df8 = last_df[['30년이상','30년이상_avg']]
-    dfs = [df1,df2,df3,df4,df5,df6,df7,df8]
+    df9 = last_df[['10년미만','10년미만_avg']]
+    df10 = last_df[['10년이상','10년이상_avg']]
+    df11 = last_df[['total','total_avg']]
+    dfs = [df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11]
 
     label_dates =[]
     for t in workdays:
@@ -513,6 +557,9 @@ for i in range(100):
     last_df.loc[i,'10년'] = 0
     last_df.loc[i,'15년~20년'] = 0
     last_df.loc[i,'30년이상'] = 0
+    last_df.loc[i,'10년미만'] = 0
+    last_df.loc[i,'10년이상'] = 0
+    last_df.loc[i,'total'] = 0
 for i in range(100):
     last_df.loc[i,'3선_avg'] = 0
     last_df.loc[i,'3년_avg'] = 0
@@ -522,6 +569,9 @@ for i in range(100):
     last_df.loc[i,'10년_avg'] = 0
     last_df.loc[i,'15년~20년_avg'] = 0
     last_df.loc[i,'30년이상_avg'] = 0
+    last_df.loc[i,'10년미만_avg'] = 0
+    last_df.loc[i,'10년이상_avg'] = 0
+    last_df.loc[i,'total_avg'] = 0
 
 
 

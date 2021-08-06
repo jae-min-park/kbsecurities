@@ -255,8 +255,8 @@ df10f['기타'] = -(df10f['보험기금']+df10f['은행']+df10f['투신']+df10f[
 
 
 """조회화면 값 입력"""
-# start_date = pd.Timestamp('2021-07-12')
-# end_date = pd.Timestamp('2021-07-23')
+start_date = pd.Timestamp('2018-01-01')
+end_date = pd.Timestamp(str(datetime.now())[:10])
 
 cols = ['외국인','투신','보험기금','은행','증권','상장']
 idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
@@ -359,8 +359,9 @@ insertInfoFutures(future_df, 'futures_bpv')
 insertSettings(set_df, 'setting_delta')
 
 """일별 3선 10선 DB에 데이터 추가 """
-start_date = '2021-08-04'
-end_date = str(datetime.now()-pd.Timedelta(days=1))[:10]
+start_date = pd.Timestamp('2021-08-05')
+end_date = pd.Timestamp(str(datetime.now()-pd.Timedelta(days=1))[:10])
+# end_date = str(datetime.now()-pd.Timedelta(days=1))[:10]
 insertKtbf(df10f, 'ktbf10y_vol', start_date, end_date)
 insertKtbf(df3f, 'ktbf3y_vol', start_date, end_date)
 
