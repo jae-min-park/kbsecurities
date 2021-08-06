@@ -11,11 +11,32 @@ test_db = pymysql.connect(user='admin',
 
 cursor = test_db.cursor(pymysql.cursors.DictCursor)
 
+
+"""
+엑셀 환율(엔화) 데이터를 DB에 삽입해 주는 함수
+"""
+def insertFxData(df_excel, table):
+    df = df_excel[0]
+    df = df[['일자','시간','시가','고가','저가','현재가']]
+    df.dropna(inplace=True)
+    print(df)
+    
+    for i in tqdm(range(len(df.index))) :
+        date = str(df.iloc[i,0])[:10]
+        time = str(df.iloc[i,1])
+        o = str(df.iloc[i,2])
+        h = str(df.iloc[i,3])
+        l = str(df.iloc[i,4])
+        c = str(df.iloc[i,5])
+        
+        sql = "insert into "+table+" (date, time, open, high, low, close) values ('" + date + "','" + time + "','" + o + "','"+ h + "','"+ l + "','"+ c + "'" + ');'
+        cursor.execute(sql)
+    test_db.commit()
+
 """
 엑셀 10초 데이터를 DB에 삽입해 주는 함수
 """
 def insert10secData(df_excel, table):
-    
     df = df_excel[0]
     df = df[['코드','일자','시간','시가','고가','저가','현재가','거래량']]
     df.dropna(inplace=True)
@@ -40,7 +61,6 @@ def insert10secData(df_excel, table):
 엑셀 틱 데이터를 DB에 삽입해 주는 함수
 """
 def insertTickData(df_excel, table):
-
     df = df_excel[0]
     df = df[['코드.1','일자.1','시간.1','현재가.1','거래량.1']]
     df.dropna(inplace=True)
@@ -58,7 +78,10 @@ def insertTickData(df_excel, table):
     test_db.commit()
 
 
-    
+"""엔화 30분봉"""
+df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\엔원\jpykrw.xlsx',  sheet_name=[0], header=4)
+insertFxData(df_excel, 'jpykrw')
+
 """국10년선물 10초봉"""
 df_excel = pd.read_excel('D:\dev\kbsecurities\dev\dataInsertion\국선10년\lktb_data.xlsx',  sheet_name=[0], header=4)
 insert10secData(df_excel, 'lktbf_10sec')
