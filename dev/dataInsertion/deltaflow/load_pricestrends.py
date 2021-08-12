@@ -45,12 +45,12 @@ def getResultTable(df, set_df, treasury_result_df, start_date, end_date, asset) 
     tmp_joined = joined[bools]
     if tmp_joined.empty :
         return df
-    df.loc[asset,'외국인'] = round(np.sum(tmp_joined['외국인 순매수 거래량'] * tmp_joined['델타'])/10**12,2)
-    df.loc[asset,'투신'] = round(np.sum(tmp_joined['자산운용(공모) 순매수 거래량'] * tmp_joined['델타'])/10**12,2)
-    df.loc[asset,'보험기금'] = round(np.sum(tmp_joined['보험기금 순매수 거래량'] * tmp_joined['델타'])/10**12,2)
-    df.loc[asset,'은행'] = round(np.sum(tmp_joined['은행 순매수 거래량'] * tmp_joined['델타'])/10**12,2)
-    df.loc[asset,'증권'] = round(np.sum(tmp_joined['증권순매수(원)'] * tmp_joined['델타'])/10**12,2)
-    df.loc[asset,'상장'] = round(np.sum(tmp_joined['낙찰금액'] * tmp_joined['델타'])/10**12,2)
+    df.loc[asset,'외국인'] = round(np.sum(tmp_joined['외국인 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
+    df.loc[asset,'투신'] = round(np.sum(tmp_joined['자산운용(공모) 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
+    df.loc[asset,'보험기금'] = round(np.sum(tmp_joined['보험기금 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
+    df.loc[asset,'은행'] = round(np.sum(tmp_joined['은행 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
+    df.loc[asset,'증권'] = round(np.sum(tmp_joined['증권순매수(원)'] * tmp_joined['델타'])/10**12,3)
+    df.loc[asset,'상장'] = round(np.sum(tmp_joined['낙찰금액'] * tmp_joined['델타'])/10**12,3)
     # df.loc[asset,'상장'] = round(np.sum(tmp_joined['상장잔액증감(원)'] * tmp_joined['델타'])/10**12,2)
     return df
 
@@ -197,15 +197,16 @@ def showPricesTrend(last_df, start_date, end_date, opt = '은증') :
 
 """실제 사용중인 함수"""
 def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
+    num = 0
     """30년입찰 최근제외 올해 일자들"""
     for date in y30_list :
-        start_date = date - pd.Timedelta(days=31)
-        end_date = date + pd.Timedelta(days=diff)
+        start_date = date - pd.Timedelta(days=40)
+        end_date = date + pd.Timedelta(days=40)
         df3f_1 = setDfData(start_date, date,'ktbf3y_vol').iloc[-13:]
         df3f_1.set_index('date', inplace=True)
         dti1 = list(df3f_1.index)
         
-        df3f_2 = setDfData(date+pd.Timedelta(days=1), end_date,'ktbf3y_vol')
+        df3f_2 = setDfData(date+pd.Timedelta(days=1), end_date,'ktbf3y_vol').iloc[:diff-1]
         df3f_2.set_index('date', inplace=True)
         dti2 = list(df3f_2.index)
         
@@ -320,6 +321,12 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
             last_df.loc[i,'15년~20년_avg'] += summary_df.loc['15년~20년', '은증']
             last_df.loc[i,'30년이상_avg'] += summary_df.loc['30년이상', '은증']
             
+            # last_df.loc[i,'10년미만_avg'] += (df.loc['2Y','은행']+df.loc['2Y','증권']+
+            #                                df.loc['3Y','은행']+df.loc['3Y','증권']+
+            #                                df.loc['3선','은행']+df.loc['3선','증권']+
+            #                                df.loc['5Y','은행']+df.loc['5Y','증권']+
+            #                                df.loc['7Y','은행']+df.loc['7Y','증권']
+            #                                )
             last_df.loc[i,'10년미만_avg'] += (summary_df.loc['2년이하', '은증']+
                                            summary_df.loc['3년', '은증']+
                                            summary_df.loc['5년', '은증']+
@@ -337,6 +344,7 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
                                            summary_df.loc['15년~20년', '은증']+
                                            summary_df.loc['30년이상', '은증']
                                            )
+            
             # elif opt == '외국인':
             #     last_df.loc[move_date,'3선'] = df.loc['3선','외국인'] + df.loc['3선','외국인']
             #     last_df.loc[move_date,'3년'] = summary_df.loc['3년', '외인'] - last_df.loc[move_date,'3선']
@@ -352,12 +360,20 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
             i+=1
         
     """최근기준"""
-    start_date = target_dt - pd.Timedelta(days=31)
-    end_date = target_dt + pd.Timedelta(days=diff)
+    start_date = target_dt - pd.Timedelta(days=40)
+    end_date = target_dt + pd.Timedelta(days=40)
+    # end_date = target_dt + pd.Timedelta(days=diff)
+    # df3f_1 = setDfData(start_date, target_dt,'ktbf3y_vol').iloc[-13:]
+    # df3f_1.set_index('date', inplace=True)
+    # dti1 = list(df3f_1.index)
+    # df3f_2 = setDfData(target_dt+pd.Timedelta(days=1), end_date,'ktbf3y_vol')
+    # df3f_2.set_index('date', inplace=True)
+    # dti2 = list(df3f_2.index)
+    
     df3f_1 = setDfData(start_date, target_dt,'ktbf3y_vol').iloc[-13:]
     df3f_1.set_index('date', inplace=True)
     dti1 = list(df3f_1.index)
-    df3f_2 = setDfData(target_dt+pd.Timedelta(days=1), end_date,'ktbf3y_vol')
+    df3f_2 = setDfData(target_dt+pd.Timedelta(days=1), end_date,'ktbf3y_vol').iloc[:diff-1]
     df3f_2.set_index('date', inplace=True)
     dti2 = list(df3f_2.index)
     
@@ -519,31 +535,74 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
     for i in last_df.index:
         last_df.loc[i] -= tmp
 
-    df1 = last_df[['3선', '3선_avg']]
-    df2 = last_df[['3년','3년_avg']]
+    df0 = last_df[['total','total_avg']]
+    df1 = last_df[['3년','3년_avg']]
+    df2 = last_df[['3선', '3선_avg']]
     df3 = last_df[['5년','5년_avg']]
     df4 = last_df[['7년','7년_avg']]
-    df5 = last_df[['10선','10선_avg']]
-    df6 = last_df[['10년','10년_avg']]
-    df7 = last_df[['15년~20년','15년~20년_avg']]
-    df8 = last_df[['30년이상','30년이상_avg']]
-    df9 = last_df[['10년미만','10년미만_avg']]
-    df10 = last_df[['10년이상','10년이상_avg']]
-    df11 = last_df[['total','total_avg']]
-    dfs = [df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11]
+    df5 = last_df[['10년미만','10년미만_avg']]
+    df6 = last_df[['10년이상','10년이상_avg']]
+    df7 = last_df[['10년','10년_avg']]
+    df8 = last_df[['10선','10선_avg']]
+    df9 = last_df[['15년~20년','15년~20년_avg']]
+    df10 = last_df[['30년이상','30년이상_avg']]
+    
+    dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10]
 
+
+    barplot_diff=[] # 델타괴리 barplot diff
+    
+    """테너별 plot"""
     label_dates =[]
     for t in workdays:
         label_dates.append(str(t)[5:10])
     for df in dfs :
         ax = df.plot()
         plt.xticks(np.arange(0,num), label_dates, rotation=45)
-        ax.set_title(df.columns[0])
+        
+        first_diff = df.iloc[-1][0] - df.iloc[-1][1]
+        second_diff = df.iloc[-2][0] - df.iloc[-2][1]         
+        # print(first_diff, second_diff)
+        # title = df.columns[0] + "(전일비괴리 :" + + ")"
+        diff = round(first_diff-second_diff,1)
+        barplot_diff.append(diff)
+        title = f'{df.columns[0]} / 전일대비 괴리 변화 : {diff} 억원'
+        ax.set_title(title)
         ax.set_ylabel('억원')
         ax.set_xlabel('영업일기준')
         ax.xaxis.grid(True)
         ax.yaxis.grid(True)
         ax.legend(loc='lower right', ncol=2, bbox_to_anchor=(1,-0.5))
+    
+    """델타괴리 bar plot 표시"""
+    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년','3선','5년','7년','10년','10선','15년~20년','30년이상','10년미만','10년이상'])
+    barplot_df.loc['3년','val'] = df1.iloc[-1][0] - df1.iloc[-1][1]
+    barplot_df.loc['3선','val'] = df2.iloc[-1][0] - df2.iloc[-1][1]
+    barplot_df.loc['5년','val'] = df3.iloc[-1][0] - df3.iloc[-1][1]
+    barplot_df.loc['7년','val'] = df4.iloc[-1][0] - df4.iloc[-1][1]
+    barplot_df.loc['10년','val'] = df7.iloc[-1][0] - df7.iloc[-1][1]
+    barplot_df.loc['10선','val'] = df8.iloc[-1][0] - df8.iloc[-1][1]
+    barplot_df.loc['15년~20년','val'] = df9.iloc[-1][0] - df9.iloc[-1][1]
+    barplot_df.loc['30년이상','val'] = df10.iloc[-1][0] - df10.iloc[-1][1]
+    barplot_df.loc['10년미만','val'] = df5.iloc[-1][0] - df5.iloc[-1][1]
+    barplot_df.loc['10년이상','val'] = df6.iloc[-1][0] - df6.iloc[-1][1]
+    # barplot_df.loc['total','val'] = df0.iloc[-1][0] - df0.iloc[-1][1]
+    
+    barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[5],barplot_diff[6]
+    del barplot_diff[-1]
+    ax = barplot_df.plot.bar(rot=0) 
+    for i, v in enumerate(barplot_diff):
+        plt.text(i-0.4, 0, '{0:+}'.format(v), fontsize = 12, color='black')
+        
+    plt.xticks(rotation=45)
+    plt.axvline(7.5, color='grey')
+    ax.set_ylabel('억원')
+    ax.set_xlabel('테너')
+    title = f'{str(datetime.now())[5:10]} YTD월평균 대비 은증델타 괴리 ({str(num)}일간, 숫자는 전일비)'
+    ax.set_title(title)
+    ax.xaxis.grid(True)
+    ax.yaxis.grid(True)
+    ax.get_legend().remove()
 #%%
 
 """결과값 받는 df 초기화"""
@@ -589,7 +648,6 @@ y30_list = [
 """2주일전~최근입찰일~어제 중 영업일만 포함"""
 target_date = pd.Timestamp('2021-08-02')
 yesterday = pd.Timestamp(str(datetime.now())[:10])-pd.Timedelta(days=1)
-# yesterday = pd.Timestamp('2021-06-30')
-diff = int(str(yesterday - target_date)[:2])
-
+diff = len(setDfData(target_date, yesterday,'ktbf3y_vol'))
+# diff = int(str(yesterday - target_date)[:2])
 showPricesPerTenor(last_df, y30_list, target_date, diff)

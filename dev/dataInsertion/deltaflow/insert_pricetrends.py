@@ -151,11 +151,15 @@ set_df.drop(['조회일','종목코드'], axis=1, inplace=True)
 """국고 data 만들기"""
 # 화면번호 4516 엑셀
 bid_amount_df  = pd.read_excel('bid_amount.xlsx',header = 2)
-bid_amount_df = bid_amount_df[bid_amount_df['구분'] =='경쟁']
-bid_amount_df = bid_amount_df[['입찰일','표준코드','낙찰금액']]
+# bid_amount_df = bid_amount_df[bid_amount_df['구분'] =='경쟁']
+bid_amount_df = bid_amount_df[['입찰일','표준코드','구분','낙찰금액']]
 bid_amount_df.rename(columns={'입찰일':'일자', '표준코드':'종목코드'}, inplace=True)
-bid_amount_df.set_index(['일자','종목코드'],inplace=True)
-bid_amount_df['낙찰금액'] = bid_amount_df['낙찰금액']*1000000
+bid_amount_df = bid_amount_df['낙찰금액'].groupby([bid_amount_df['일자'],bid_amount_df['종목코드']]).sum()
+# bid_amount_df.set_index(['일자','종목코드'],inplace=True)
+# bid_amount_df['낙찰금액'] = bid_amount_df['낙찰금액']*1000000
+bid_amount_df = bid_amount_df*1000000
+# bid_amount_df['낙찰금액'].fillna(0,inplace=True)
+
 # 원래 엑셀
 treasury_df = pd.read_excel('sugup_ver1.2.xlsx', sheet_name='국고')
 treasury_df = treasury_df.drop(['Unnamed: 0'],axis=1)
@@ -359,7 +363,7 @@ insertInfoFutures(future_df, 'futures_bpv')
 insertSettings(set_df, 'setting_delta')
 
 """일별 3선 10선 DB에 데이터 추가 """
-start_date = pd.Timestamp('2021-08-05')
+start_date = pd.Timestamp('2021-08-11')
 end_date = pd.Timestamp(str(datetime.now()-pd.Timedelta(days=1))[:10])
 # end_date = str(datetime.now()-pd.Timedelta(days=1))[:10]
 insertKtbf(df10f, 'ktbf10y_vol', start_date, end_date)
