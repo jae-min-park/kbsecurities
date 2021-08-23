@@ -381,6 +381,7 @@ def showDeltaflow(month=7) :
         last_df.loc[i,'30년이상'] = 0
         last_df.loc[i,'10년미만'] = 0
         last_df.loc[i,'10년이상'] = 0
+        last_df.loc[i,'물가'] = 0
         last_df.loc[i,'total'] = 0
     for i in range(21): # 0:5Y-3, 1:5Y, 2:5Y+1, 3:5Y+2, 4:5Y+3, 5:5Y+4, 6:30Y, 7:30Y+1, 8:30Y+2, 9:30Y+3, 10:30Y+4, 11:3Y, 12:3Y+1, 13:3Y+2, 14:3Y+3, 15:3Y+4, 16:10Y, 17:10Y+1, 18:10Y+2, 19:10Y+3, 20:10Y+4
         last_df.loc[i,'3선_avg'] = 0
@@ -393,6 +394,7 @@ def showDeltaflow(month=7) :
         last_df.loc[i,'30년이상_avg'] = 0
         last_df.loc[i,'10년미만_avg'] = 0
         last_df.loc[i,'10년이상_avg'] = 0
+        last_df.loc[i,'물가_avg'] = 0        
         last_df.loc[i,'total_avg'] = 0
     
     future_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'futures_bpv')
@@ -582,13 +584,16 @@ def showDeltaflow(month=7) :
             
             last_df.loc[j,'10년이상_avg'] += (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                           df.loc['물가','은행']+df.loc['물가','증권']
                                            )
+            last_df.loc[j,'물가_avg'] += (df.loc['물가','은행']+df.loc['물가','증권'])              
             last_df.loc[j,'total_avg'] += (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
                                            df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
                                            df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                           df.loc['물가','은행']+df.loc['물가','증권']
                                            )
     
     last_df.loc[0,:] /= cnt
@@ -631,305 +636,362 @@ def showDeltaflow(month=7) :
             move_date = calendar.loc[month,'3Y']
             if move_date == 0 :
                 calendar.loc[month,'3Y']=move_date = start_date
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
                     target_date = start_date
-                move_date = start_date                        
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
         if j == 2:
             move_date = calendar.loc[month,'3Y+1']
             if move_date == 0:
                 calendar.loc[month,'3Y+1']=move_date = calendar.loc[month,'3Y']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'3Y']
-                move_date = calendar.loc[month,'3Y']                       
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 3:
             move_date = calendar.loc[month,'3Y+2']
             if move_date == 0:
                 calendar.loc[month,'3Y+2']=move_date = calendar.loc[month,'3Y+1']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'3Y+1']
-                move_date = calendar.loc[month,'3Y+1']                        
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 4:
             move_date = calendar.loc[month,'3Y+3']
             if move_date == 0:
                 calendar.loc[month,'3Y+3']=move_date = calendar.loc[month,'3Y+2']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'3Y+2']
-                move_date = calendar.loc[month,'3Y+2']                        
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 5:
             move_date = calendar.loc[month,'3Y+4']
             if move_date == 0:
                 calendar.loc[month,'3Y+4']=move_date = calendar.loc[month,'3Y+3']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'3Y+3']
-                move_date = calendar.loc[month,'3Y+3']                        
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 6:
             move_date = calendar.loc[month,'10Y']
             if move_date == 0:
                 calendar.loc[month,'10Y']=move_date = calendar.loc[month,'3Y+4']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'3Y+4']
-                move_date = calendar.loc[month,'3Y+4']            
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 7:
             move_date = calendar.loc[month,'10Y+1']
             if move_date == 0:
                 calendar.loc[month,'10Y+1']=move_date = calendar.loc[month,'10Y']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'10Y']
-                move_date = calendar.loc[month,'10Y']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 8:
             move_date = calendar.loc[month,'10Y+2']
             if move_date == 0:
                 calendar.loc[month,'10Y+2']=move_date = calendar.loc[month,'10Y+1']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'10Y+1']
-                move_date = calendar.loc[month,'10Y+1']            
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 9:
             move_date = calendar.loc[month,'10Y+3']
             if move_date == 0:
                 calendar.loc[month,'10Y+3']=move_date = calendar.loc[month,'10Y+2']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'10Y+2']
-                move_date = calendar.loc[month,'10Y+2']            
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 10:
             move_date = calendar.loc[month,'10Y+4']
             if move_date == 0:
                 calendar.loc[month,'5Y+4']=move_date = calendar.loc[month,'10Y+3']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'10Y+3']
-                move_date = calendar.loc[month,'10Y+3']            
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 11:
             move_date = calendar.loc[month,'5Y']
             if move_date == 0:
                 calendar.loc[month,'5Y']=move_date = calendar.loc[month,'10Y+4']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'10Y+4']
-                move_date = calendar.loc[month,'10Y+4']                          
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 12:
             move_date = calendar.loc[month,'5Y+1']
             if move_date == 0:
                 calendar.loc[month,'5Y+1']=move_date = calendar.loc[month,'5Y']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'5Y']
-                move_date = calendar.loc[month,'5Y']                          
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 13:
             move_date = calendar.loc[month,'5Y+2']
             if move_date == 0:
                 calendar.loc[month,'5Y+2']=move_date = calendar.loc[month,'5Y+1']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'5Y+1']
-                move_date = calendar.loc[month,'5Y+1']                          
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 14:
             move_date = calendar.loc[month,'5Y+3']
             if move_date == 0:
                 calendar.loc[month,'5Y+3']=move_date = calendar.loc[month,'5Y+2']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'5Y+2']
-                move_date = calendar.loc[month,'5Y+2']                          
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 15:
             move_date = calendar.loc[month,'5Y+4']
             if calendar.loc[month,'N+4'] != 0:
                 move_date = calendar.loc[month,'N+4']
-                dates.append(str(move_date)[5:10])        
-            elif move_date == 0:
-                calendar.loc[month,'30Y+4']=move_date = calendar.loc[month,'5Y+3']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'5Y+3']
-                move_date = calendar.loc[month,'5Y+3']              
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 16:
             move_date = calendar.loc[month,'30Y']
             if move_date == 0:
                 calendar.loc[month,'30Y']=move_date = calendar.loc[month,'5Y+4']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'5Y+4']
-                move_date = calendar.loc[month,'5Y+4']  
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 17:
             move_date = calendar.loc[month,'30Y+1']
             if move_date == 0:
                 calendar.loc[month,'30Y+1']=move_date = calendar.loc[month,'30Y']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'30Y']
-                move_date = calendar.loc[month,'30Y']              
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 18:
             move_date = calendar.loc[month,'30Y+2']
             if move_date == 0:
                 calendar.loc[month,'30Y+2']=move_date = calendar.loc[month,'30Y+1']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'30Y+1']
-                move_date = calendar.loc[month,'30Y+1']            
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 19:
             move_date = calendar.loc[month,'30Y+3']
             if move_date == 0 :
                 calendar.loc[month,'30Y+3']=move_date = calendar.loc[month,'30Y+2']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'30Y+2']
-                move_date = calendar.loc[month,'30Y+2']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10])            
+                dates.append(str(move_date)[5:10])
         if j == 20:
             move_date = calendar.loc[month,'30Y+4']
             if move_date == 0 :
                 calendar.loc[month,'30Y+4']=move_date = calendar.loc[month,'30Y+3']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                dates.append('공백')
+                # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-04') <= move_date : 
+            # elif pd.Timestamp('2021-08-23') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
-                    target_date = calendar.loc[month,'30Y+3']
-                move_date = calendar.loc[month,'30Y+3']
-                dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
+                    target_date = start_date
+                    dates.append(str(move_date)[5:10])
+                else:
+                    move_date = start_date                        
+                    dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
-                dates.append(str(move_date)[5:10]) 
+                dates.append(str(move_date)[5:10])
             
         treasury_result_df = setDfData(start_date, move_date,'treasury_vol')
         df3f = setDfData(start_date, move_date,'ktbf3y_vol')[::-1]
@@ -980,13 +1042,16 @@ def showDeltaflow(month=7) :
         
         last_df.loc[j,'10년이상'] = (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
                                        df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                       df.loc['물가','은행']+df.loc['물가','증권']
                                        )
+        last_df.loc[j,'물가'] += (df.loc['물가','은행']+df.loc['물가','증권'])                                        
         last_df.loc[j,'total'] = (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
                                        df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
                                        df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
                                        df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
-                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                       df.loc['물가','은행']+df.loc['물가','증권']
                                        )
     
     
@@ -1005,19 +1070,18 @@ def showDeltaflow(month=7) :
     df8 = last_df[['10선','10선_avg']]
     df9 = last_df[['15년~20년','15년~20년_avg']]
     df10 = last_df[['30년이상','30년이상_avg']]
+    df11 = last_df[['물가','물가_avg']]
     
-    dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10]
+    dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11]
     
     
     barplot_diff=[] # 델타괴리 barplot diff
     
     """테너별 plot"""
-    
     for df in dfs :
         ax = df.plot()
         plt.xticks(np.arange(0,len(dates)), dates, rotation=45)
         
-        # 
         first_diff = df.iloc[target_idx][0] - df.iloc[target_idx][1]
         second_diff = df.iloc[target_idx-1][0] - df.iloc[target_idx-1][1]         
         # print(first_diff, second_diff)
@@ -1035,7 +1099,7 @@ def showDeltaflow(month=7) :
         ax.legend(loc='lower right', ncol=2, bbox_to_anchor=(1,-0.5))   
         
     """델타괴리 bar plot 표시"""
-    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년','3선','5년','7년','10년','10선','15년~20년','30년이상','10년미만','10년이상'])
+    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
     barplot_df.loc['3년','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
     barplot_df.loc['3선','val'] = df2.iloc[target_idx][0] - df2.iloc[target_idx][1]
     barplot_df.loc['5년','val'] = df3.iloc[target_idx][0] - df3.iloc[target_idx][1]
@@ -1044,10 +1108,11 @@ def showDeltaflow(month=7) :
     barplot_df.loc['10선','val'] = df8.iloc[target_idx][0] - df8.iloc[target_idx][1]
     barplot_df.loc['15년~20년','val'] = df9.iloc[target_idx][0] - df9.iloc[target_idx][1]
     barplot_df.loc['30년이상','val'] = df10.iloc[target_idx][0] - df10.iloc[target_idx][1]
+    barplot_df.loc['물가','val'] = df11.iloc[target_idx][0] - df11.iloc[target_idx][1]    
     barplot_df.loc['10년미만','val'] = df5.iloc[target_idx][0] - df5.iloc[target_idx][1]
     barplot_df.loc['10년이상','val'] = df6.iloc[target_idx][0] - df6.iloc[target_idx][1]
     
-    barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[5],barplot_diff[6]
+    barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[11],barplot_diff[5],barplot_diff[6]
     
     del barplot_diff[-1]
     ax = barplot_df.plot.bar(rot=0) 
@@ -1055,7 +1120,7 @@ def showDeltaflow(month=7) :
         plt.text(i-0.4, 0, '{0:+}'.format(v), fontsize = 12, color='black')
         
     plt.xticks(rotation=45)
-    plt.axvline(7.5, color='grey')
+    plt.axvline(8.5, color='grey')
     ax.set_ylabel('억원')
     ax.set_xlabel('테너')
     title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (숫자는 전일비)'

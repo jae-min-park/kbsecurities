@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 # calendar = ldf3y.showDeltaflow(month=7,first_day ='2021-01-01', y5_day='2020-12-07')
 
 # 10년입찰주
-calendar = ldf10y.showDeltaflow(month=7,first_day ='2021-01-01', y5_day='2020-12-07')
+# calendar = ldf10y.showDeltaflow(month=7,first_day ='2021-01-01', y5_day='2020-12-07')
 
 # 5년입찰주 및 입찰공백주
-# calendar = ldf5y.showDeltaflow(month=7,first_day ='2021-01-01', y5_day='2020-12-07')
+calendar = ldf5y.showDeltaflow(month=8,first_day ='2021-01-01', y5_day='2020-12-07')
