@@ -568,7 +568,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
             last_df.loc[j,'5년_avg'] += (df.loc['5Y','은행'] + df.loc['5Y','증권'])
             last_df.loc[j,'7년_avg'] += (df.loc['7Y','은행'] + df.loc['7Y','증권'])
             last_df.loc[j,'10선_avg'] += (df.loc['10선','은행'] + df.loc['10선','증권'])
-            last_df.loc[j,'10년_avg'] += (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'])
+            last_df.loc[j,'10년_avg'] += (df.loc['10Y','은행']+ df.loc['10Y','증권'])
             last_df.loc[j,'15년~20년_avg'] += (df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'])
             last_df.loc[j,'30년이상_avg'] += (df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권'])
             
@@ -636,7 +636,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -654,7 +654,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -672,7 +672,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -690,7 +690,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -708,7 +708,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -726,7 +726,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -744,7 +744,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -762,7 +762,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -780,7 +780,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -798,7 +798,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -816,7 +816,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -834,7 +834,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -852,7 +852,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -870,7 +870,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -888,7 +888,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -906,7 +906,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -924,7 +924,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -940,7 +940,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -956,7 +956,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -967,16 +967,29 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
                 dates.append(str(move_date)[5:10])            
         if j == 20:
             move_date = calendar.loc[month,'5Y+4']
-            # if calendar.loc[month,'N+4'] != 0:
-            #     move_date = calendar.loc[month,'N+4']
-            #     dates.append(str(move_date)[5:10])            
+
+            # 5Y+4 이후 입찰이 없는 주라면
+            if calendar.loc[month,'N'] != 0 and calendar.loc[month,'N'] <= pd.Timestamp(str(datetime.now())[:10]):
+                if calendar.loc[month,'N+4'] <= pd.Timestamp(str(datetime.now())[:10]):
+                    target_date = move_date = calendar.loc[month,'N+3']
+                elif calendar.loc[month,'N+3'] <= pd.Timestamp(str(datetime.now())[:10]):
+                    target_date = move_date = calendar.loc[month,'N+2']
+                elif calendar.loc[month,'N+2'] <= pd.Timestamp(str(datetime.now())[:10]):
+                    target_date = move_date = calendar.loc[month,'N+1']
+                elif calendar.loc[month,'N+1'] <= pd.Timestamp(str(datetime.now())[:10]):
+                    target_date = move_date = calendar.loc[month,'N']
+                elif calendar.loc[month,'N'] <= pd.Timestamp(str(datetime.now())[:10]):
+                    target_date = move_date
+                target_idx=j
+                dates.append(str(move_date)[5:10])   
+                
             # elif move_date == 0 :
-            if move_date == 0 :
+            elif move_date == 0 :
                 calendar.loc[month,'5Y+4']=move_date = calendar.loc[month,'5Y+3']
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(str(datetime.now())[:10]) <= move_date : 
-            # elif pd.Timestamp('2021-08-23') <= move_date : 
+            # elif pd.Timestamp('2021-08-31') <= move_date : 
                 if flag != True:
                     flag = True
                     target_idx = j-1
@@ -1020,7 +1033,7 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
         last_df.loc[j,'5년'] = (df.loc['5Y','은행'] + df.loc['5Y','증권'])
         last_df.loc[j,'7년'] = (df.loc['7Y','은행'] + df.loc['7Y','증권'])
         last_df.loc[j,'10선'] = (df.loc['10선','은행'] + df.loc['10선','증권'])
-        last_df.loc[j,'10년'] = (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'])
+        last_df.loc[j,'10년'] = (df.loc['10Y','은행']+ df.loc['10Y','증권'])
         last_df.loc[j,'15년~20년'] = (df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'])
         last_df.loc[j,'30년이상'] = (df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권'])
         
@@ -1119,4 +1132,4 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
 
     return calendar
     
-# cal = showDeltaflow()
+cal = showDeltaflow()

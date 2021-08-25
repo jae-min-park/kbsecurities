@@ -569,7 +569,7 @@ def showDeltaflow(month=7, first_day ='2021-01-01', y5_day='2020-12-07') :
             last_df.loc[j,'5년_avg'] += (df.loc['5Y','은행'] + df.loc['5Y','증권'])
             last_df.loc[j,'7년_avg'] += (df.loc['7Y','은행'] + df.loc['7Y','증권'])
             last_df.loc[j,'10선_avg'] += (df.loc['10선','은행'] + df.loc['10선','증권'])
-            last_df.loc[j,'10년_avg'] += (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'])
+            last_df.loc[j,'10년_avg'] += (df.loc['10Y','은행']+ df.loc['10Y','증권'])
             last_df.loc[j,'15년~20년_avg'] += (df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'])
             last_df.loc[j,'30년이상_avg'] += (df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권'])
             
@@ -1029,7 +1029,7 @@ def showDeltaflow(month=7, first_day ='2021-01-01', y5_day='2020-12-07') :
         last_df.loc[j,'5년'] = (df.loc['5Y','은행'] + df.loc['5Y','증권'])
         last_df.loc[j,'7년'] = (df.loc['7Y','은행'] + df.loc['7Y','증권'])
         last_df.loc[j,'10선'] = (df.loc['10선','은행'] + df.loc['10선','증권'])
-        last_df.loc[j,'10년'] = (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'])
+        last_df.loc[j,'10년'] = (df.loc['10Y','은행'] + df.loc['10Y','증권'])
         last_df.loc[j,'15년~20년'] = (df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'])
         last_df.loc[j,'30년이상'] = (df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권'])
         

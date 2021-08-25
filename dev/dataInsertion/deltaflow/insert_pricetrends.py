@@ -7,6 +7,10 @@ import pymysql
 import re
 from tqdm import tqdm
 
+import warnings
+# warnings.filterwarnings('error', category=UserWarning)
+warnings.filterwarnings(action='ignore')
+
 font_path = "C:\Windows\Fonts\\batang.ttc"
 font = font_manager.FontProperties(fname=font_path).get_name()
 rc('font', family=font)
@@ -363,7 +367,9 @@ insertInfoFutures(future_df, 'futures_bpv')
 insertSettings(set_df, 'setting_delta')
 
 """일별 3선 10선 DB에 데이터 추가 """
-start_date = pd.Timestamp('2021-08-11')
+# start_date = pd.Timestamp('2021-08-19')
+tmp = setDfData('2018-01-01','9999-12-31','ktbf3y_vol')
+start_date = pd.Timestamp(str(tmp['date'].iloc[-1]+pd.Timedelta(days=1))[:10])
 end_date = pd.Timestamp(str(datetime.now()-pd.Timedelta(days=1))[:10])
 # end_date = str(datetime.now()-pd.Timedelta(days=1))[:10]
 insertKtbf(df10f, 'ktbf10y_vol', start_date, end_date)
