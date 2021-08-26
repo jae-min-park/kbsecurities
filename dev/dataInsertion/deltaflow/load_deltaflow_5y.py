@@ -1100,30 +1100,37 @@ def showDeltaflow(month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
         
     """델타괴리 bar plot 표시"""
     barplot_df = pd.DataFrame(columns= ['val'], index= ['3년','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
-    barplot_df.loc['3년','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
-    barplot_df.loc['3선','val'] = df2.iloc[target_idx][0] - df2.iloc[target_idx][1]
-    barplot_df.loc['5년','val'] = df3.iloc[target_idx][0] - df3.iloc[target_idx][1]
-    barplot_df.loc['7년','val'] = df4.iloc[target_idx][0] - df4.iloc[target_idx][1]
-    barplot_df.loc['10년','val'] = df7.iloc[target_idx][0] - df7.iloc[target_idx][1]
-    barplot_df.loc['10선','val'] = df8.iloc[target_idx][0] - df8.iloc[target_idx][1]
-    barplot_df.loc['15년~20년','val'] = df9.iloc[target_idx][0] - df9.iloc[target_idx][1]
-    barplot_df.loc['30년이상','val'] = df10.iloc[target_idx][0] - df10.iloc[target_idx][1]
-    barplot_df.loc['물가','val'] = df11.iloc[target_idx][0] - df11.iloc[target_idx][1]
-    barplot_df.loc['10년미만','val'] = df5.iloc[target_idx][0] - df5.iloc[target_idx][1]
-    barplot_df.loc['10년이상','val'] = df6.iloc[target_idx][0] - df6.iloc[target_idx][1]
+    pos = [0.0]*11
+    pos[0]=barplot_df.loc['3년','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
+    pos[1]=barplot_df.loc['3선','val'] = df2.iloc[target_idx][0] - df2.iloc[target_idx][1]
+    pos[2]=barplot_df.loc['5년','val'] = df3.iloc[target_idx][0] - df3.iloc[target_idx][1]
+    pos[3]=barplot_df.loc['7년','val'] = df4.iloc[target_idx][0] - df4.iloc[target_idx][1]
+    pos[4]=barplot_df.loc['10년','val'] = df7.iloc[target_idx][0] - df7.iloc[target_idx][1]
+    pos[5]=barplot_df.loc['10선','val'] = df8.iloc[target_idx][0] - df8.iloc[target_idx][1]
+    pos[6]=barplot_df.loc['15년~20년','val'] = df9.iloc[target_idx][0] - df9.iloc[target_idx][1]
+    pos[7]=barplot_df.loc['30년이상','val'] = df10.iloc[target_idx][0] - df10.iloc[target_idx][1]
+    pos[8]=barplot_df.loc['물가','val'] = df11.iloc[target_idx][0] - df11.iloc[target_idx][1]
+    pos[9]=barplot_df.loc['10년미만','val'] = df5.iloc[target_idx][0] - df5.iloc[target_idx][1]
+    pos[10]=barplot_df.loc['10년이상','val'] = df6.iloc[target_idx][0] - df6.iloc[target_idx][1]
     
     barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[11],barplot_diff[5],barplot_diff[6]
     
     del barplot_diff[-1]
-    ax = barplot_df.plot.bar(rot=0) 
+    ax = barplot_df.plot.bar(rot=0)
     for i, v in enumerate(barplot_diff):
-        plt.text(i-0.4, 0, '{0:+}'.format(v), fontsize = 12, color='black')
+        t = pos[i]
+        if t < 0 :
+            t = t-0.5
+        else :
+            t = t+0.2
+        plt.text(i-0.4, t, '{0:+}'.format(round(pos[i]),2), fontsize = 13, color='black', fontweight='bold')
+        plt.text(i-0.4, t-1.8, '({0:+})'.format(v), fontsize = 11, color='black', weight='bold')
         
     plt.xticks(rotation=45)
     plt.axvline(8.5, color='grey')
     ax.set_ylabel('억원')
     ax.set_xlabel('테너')
-    title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (숫자는 전일비)'
+    title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (괄호안 전일비)'
     # title = f' YTD월평균 대비 은증델타 괴리 (일간, 숫자는 전일비)'
     ax.set_title(title)
     ax.xaxis.grid(True)
