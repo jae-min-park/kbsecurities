@@ -399,6 +399,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     future_df = setDfData(date, date,'futures_bpv')
     set_df = setDfData(date, date,'setting_delta').drop('date',axis=1)
+    # future_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'futures_bpv')
+    # set_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'setting_delta').drop('date',axis=1)
     
     """평균값구하기"""
     cnt=cnt5y=cnt5y_1=cnt5y_2=cnt5y_3=cnt5y_4=cnt30y=cnt30y_1=cnt30y_2=cnt30y_3=cnt30y_4=cnt3y=cnt3y_1=cnt3y_2=cnt3y_3=cnt3y_4=cnt10y=cnt10y_1=cnt10y_2=cnt10y_3=cnt10y_4=0
@@ -664,7 +666,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'3Y']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'3Y']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -682,7 +684,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'3Y+1']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'3Y+1']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -700,7 +702,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'3Y+2']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'3Y+2']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -718,7 +720,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'3Y+3']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'3Y+3']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -736,7 +738,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'3Y+4']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'3Y+4']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -754,7 +756,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'10Y']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'10Y']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -772,7 +774,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'10Y+1']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'10Y+1']                      
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -790,14 +792,14 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'10Y+2']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'10Y+2']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
         if j == 10:
             move_date = calendar.loc[month,'10Y+4']
             if move_date == 0:
-                calendar.loc[month,'5Y+4']=move_date = calendar.loc[month,'10Y+3']
+                calendar.loc[month,'10Y+4']=move_date = calendar.loc[month,'10Y+3']
                 dates.append('공백')
                 # dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             elif pd.Timestamp(date) <= move_date : 
@@ -808,7 +810,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'10Y+3']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'10Y+3']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -826,7 +828,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'10Y+4']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'10Y+4']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -844,7 +846,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'5Y']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'5Y']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -862,7 +864,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'5Y+1']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'5Y+1']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -880,7 +882,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'5Y+2']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'5Y+2']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -898,7 +900,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'5Y+3']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'5Y+3']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -916,7 +918,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'5Y+4']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'5Y+4']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -934,7 +936,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'30Y']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'30Y']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -952,7 +954,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'30Y+1']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'30Y+1']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -970,7 +972,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'30Y+2']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'30Y+2']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -988,7 +990,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     target_date = calendar.loc[month,'30Y+3']
                     dates.append(str(move_date)[5:10])
                 else:
-                    move_date = start_date                        
+                    move_date = calendar.loc[month,'30Y+3']                        
                     dates.append(str(move_date+pd.Timedelta(days=1))[5:10])
             else :
                 dates.append(str(move_date)[5:10])
@@ -1148,4 +1150,4 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# showDeltaflow()
+calendar,last_df = showDeltaflow(date='2021-08-30', month=8)

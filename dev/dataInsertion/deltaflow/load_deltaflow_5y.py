@@ -397,6 +397,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     future_df = setDfData(date, date,'futures_bpv')
     set_df = setDfData(date, date,'setting_delta').drop('date',axis=1)
+    # future_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'futures_bpv')
+    # set_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'setting_delta').drop('date',axis=1)
     
     """평균값구하기"""
     cnt=cnt5y=cnt5y_1=cnt5y_2=cnt5y_3=cnt5y_4=cnt30y=cnt30y_1=cnt30y_2=cnt30y_3=cnt30y_4=cnt3y=cnt3y_1=cnt3y_2=cnt3y_3=cnt3y_4=cnt10y=cnt10y_1=cnt10y_2=cnt10y_3=cnt10y_4=0
