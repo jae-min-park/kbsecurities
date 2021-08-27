@@ -20,8 +20,8 @@ delete from deltaflow.ktbf3y_vol where date='삽입대상날자';
 delete from deltaflow.treasury_vol;
 
 #7. 데이터가 다 인서트되면 D:\dev\kbsecurities\dev\dataInsertion\deltaflow\main_deltaflow.py에서 
-조회하는 오늘이 30년입찰주면 ldf30y모듈을, 3년입찰주면 ldf3y모듈을, 10년입찰주면 ldf10y모듈을, 5년입찰주이거나 입찰공백주이면 ldf5y모듈에 걸린 주석을 풀고 F5로 수행한다. 
-여기서 month param은 month월물, 즉 calendar변수를 뜯어볼때 조회하는 오늘이 속하는 줄이 몇번째인지 그 값을 넣으면되고,
+조회하는 오늘이 30년입찰주면 ldf30y모듈을, 3년입찰주면 ldf3y모듈을, 10년입찰주면 ldf10y모듈을, 5년입찰주이거나 입찰공백주이면 ldf5y모듈에 걸린 주석을 풀고 F5로 수행한다.  
+여기서 month param은 month월물, 즉 calendar변수를 뜯어볼때 조회하는 오늘이 속하는 줄이 몇번째인지 그 값을 넣으면되고,(혹시나 오류가 나오면 calendar 가 속한 줄 넘버 index를 month값으로 설정하고 다시 해 본다. 달력의 생김새에 따라 월물이 아닌 때로 들어가는 경우도 있음)
 first_day는 올해초로 일단고정, y5_day는 올해초 이전의 마지막 5년입찰일을 넣은 것임.
 
 #8. 플로팅해서 나온 이미지들을 파일로 저장하고, (파일 이름순을 바차트=0.png, total=1.png, 3년=2.png, 3선=3.png... 로 오더링 시켜 저장하고 파일들 묶어 선택후 0.png를 눌러서 카톡창으로 드래그하면 0.png을 처음으로 파일이름 순서대로 정렬되어 카톡창에 출력이 된다.
