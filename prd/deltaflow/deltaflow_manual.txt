@@ -1,0 +1,29 @@
+#1 D:\dev\kbsecurities\prd\case_project\dates.xlsx 
+에서 입찰일, 입찰없는막주월요일, 휴일 표기
+
+#2. 인포맥스 화면 4516 에서 2Y로 바꾸고 화면을찍고, 새 화면이 추가되지 않을때까지 PAGEDOWN 키를 계속 누른다. 
+이후 화면에 우클릭->엑셀로보내기->전체(텍스트) 로 새로 뜬 엑셀창을
+D:\dev\kbsecurities\dev\dataInsertion\deltaflow\bid_amount.xlsx 에 저장한다.
+
+#3. 혹시 bid_amount.xlsx 에 회차가 '신규'이고 구분이 '경쟁'인데 D:\dev\kbsecurities\dev\dataInsertion\deltaflow\sugup_ver1.2.xlsx '설정' sheet에 등록되지 않았다면 등록해주고, '국고' sheet 에도 추가해 준다
+
+#4. D:\dev\kbsecurities\dev\dataInsertion\deltaflow\sugup_ver1.2.xlsx '설정' sheet 에서 f9로 새로고침 후 '인포맥스->히스토리 재조회' 로 값들을 업데이트해준다. 이후 델타값이 표기가 안되면 F9를 한번 더 눌러주고, 수식이 아예 망가지면 엑셀을 껐다가 다시 키고 #4를 반복해본다. 업데이트가 잘 되었는지 여부는 '선물' sheet의 날자를 보면 쉽게 알 수 있다.
+
+#5. MySql Workbench 에서 delete from deltaflow.treasury_vol; 입력
+
+#6. Spyder 에서 D:\dev\kbsecurities\dev\dataInsertion\deltaflow\insert_pricetrends.py를 열고 F5로 수행. 여기서 순서가 꼬이거나 실수를 해서 데이터를 insert하다가 중단되버리면 아래 sql문을 입력후 다시 F5로 파이썬 코드 수행.
+
+delete from deltaflow.futures_bpv where date='오늘날자';
+delete from deltaflow.setting_delta where date='오늘날자';
+delete from deltaflow.ktbf10y_vol where date='삽입대상날자';
+delete from deltaflow.ktbf3y_vol where date='삽입대상날자';
+delete from deltaflow.treasury_vol;
+
+#7. 데이터가 다 인서트되면 D:\dev\kbsecurities\dev\dataInsertion\deltaflow\main_deltaflow.py에서 
+조회하는 오늘이 30년입찰주면 ldf30y모듈을, 3년입찰주면 ldf3y모듈을, 10년입찰주면 ldf10y모듈을, 5년입찰주이거나 입찰공백주이면 ldf5y모듈에 걸린 주석을 풀고 F5로 수행한다.  
+여기서 month param은 month월물, 즉 calendar변수를 뜯어볼때 조회하는 오늘이 속하는 줄이 몇번째인지 그 값을 넣으면되고,(혹시나 오류가 나오면 calendar 가 속한 줄 넘버 index를 month값으로 설정하고 다시 해 본다. 달력의 생김새에 따라 월물이 아닌 때로 들어가는 경우도 있음)
+first_day는 올해초로 일단고정, y5_day는 올해초 이전의 마지막 5년입찰일을 넣은 것임.
+
+#8. 플로팅해서 나온 이미지들을 파일로 저장하고, (파일 이름순을 바차트=0.png, total=1.png, 3년=2.png, 3선=3.png... 로 오더링 시켜 저장하고 파일들 묶어 선택후 0.png를 눌러서 카톡창으로 드래그하면 0.png을 처음으로 파일이름 순서대로 정렬되어 카톡창에 출력이 된다.
+
+#9. 바탕화면에 있는 알씨를 활용해 나온 이미지파일들을 선택하고 ctrl+p를 눌러 '프린터 선택' -> pdf 확인 -> 여러그림인쇄 탭 선택 -> 인쇄 하면 이미지를 한장의 pdf로 모아 보여 줄 수 있다.
