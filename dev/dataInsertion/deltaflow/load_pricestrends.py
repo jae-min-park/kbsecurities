@@ -6,6 +6,8 @@ import pymysql
 from tqdm import tqdm
 from datetime import datetime
 
+pd.options.mode.chained_assignment = None
+
 font_path = "C:\Windows\Fonts\\batang.ttc"
 font = font_manager.FontProperties(fname=font_path).get_name()
 rc('font', family=font)
@@ -214,7 +216,7 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
         num = len(workdays)
         move_date = workdays[0]
         end_date = workdays[-1]
-        i = 0 
+        i = 0
         while i < num :
             if move_date not in workdays :
                 move_date += pd.Timedelta(days=1)
@@ -560,6 +562,7 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
         ax = df.plot()
         plt.xticks(np.arange(0,num), label_dates, rotation=45)
         
+        # 
         first_diff = df.iloc[-1][0] - df.iloc[-1][1]
         second_diff = df.iloc[-2][0] - df.iloc[-2][1]         
         # print(first_diff, second_diff)
@@ -589,6 +592,7 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
     # barplot_df.loc['total','val'] = df0.iloc[-1][0] - df0.iloc[-1][1]
     
     barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[5],barplot_diff[6]
+    
     del barplot_diff[-1]
     ax = barplot_df.plot.bar(rot=0) 
     for i, v in enumerate(barplot_diff):
@@ -598,7 +602,7 @@ def showPricesPerTenor (last_df, y30_list, target_dt, diff) :
     plt.axvline(7.5, color='grey')
     ax.set_ylabel('억원')
     ax.set_xlabel('테너')
-    title = f'{str(datetime.now())[5:10]} YTD월평균 대비 은증델타 괴리 ({str(num)}일간, 숫자는 전일비)'
+    title = f'{str(workdays[-1])[5:10]} YTD월평균 대비 은증델타 괴리 ({str(num)}일간, 숫자는 전일비)'
     ax.set_title(title)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)

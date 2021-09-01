@@ -148,35 +148,35 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
     for day in auct5['5년최근'] :
         is_mon_holi = ''
         if auct5.loc[i-1,'요일'] == 'Mon':
-            calendar.loc[i+1,'5Y'] = day
+            calendar.loc[i,'5Y'] = day
         else :
-            calendar.loc[i+1,'5Y'] = day
+            calendar.loc[i,'5Y'] = day
             if auct5.loc[i-1,'요일'] == 'Tue':
                 is_mon_holi='Tue'
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Wed':
                 is_mon_holi='Wed'
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Thu':
                 is_mon_holi='Thu'
-                calendar.loc[i+1,'5Y+2'] = 0
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+2'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Fri':
                 is_mon_holi='Fri'
-                calendar.loc[i+1,'5Y+1'] = 0
-                calendar.loc[i+1,'5Y+2'] = 0
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+1'] = 0
+                calendar.loc[i,'5Y+2'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
         if is_mon_holi != 'Fri' and (day + pd.Timedelta(days=1)) not in holidays :
-            calendar.loc[i+1,'5Y+1'] = day + pd.Timedelta(days=1)
+            calendar.loc[i,'5Y+1'] = day + pd.Timedelta(days=1)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and (day + pd.Timedelta(days=2)) not in holidays :
-            calendar.loc[i+1,'5Y+2'] = day + pd.Timedelta(days=2)
+            calendar.loc[i,'5Y+2'] = day + pd.Timedelta(days=2)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and is_mon_holi != 'Wed' and (day + pd.Timedelta(days=3)) not in holidays :
-            calendar.loc[i+1,'5Y+3'] = day + pd.Timedelta(days=3)
+            calendar.loc[i,'5Y+3'] = day + pd.Timedelta(days=3)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and is_mon_holi != 'Wed' and is_mon_holi != 'Tue' and (day + pd.Timedelta(days=4)) not in holidays :
-            calendar.loc[i+1,'5Y+4'] = day + pd.Timedelta(days=4)
+            calendar.loc[i,'5Y+4'] = day + pd.Timedelta(days=4)
         i+=1
     
     """정상코드"""
@@ -346,7 +346,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
     return calendar, holi
 
 """ 조회화면 값 입력하는 반복하여 호출되는 유틸성 함수 """
-def getResultTable(df, set_df, treasury_result_df, start_date, end_date, asset) :
+def getResultTable(df,abb_list,set_df, treasury_result_df, start_date, end_date, asset, is_abb=False) :
     tmp = set_df[set_df['연물분류']==asset]
     joined = pd.merge(treasury_result_df, tmp, left_on='종목코드', right_on='종목코드')
     bools =[]
@@ -357,22 +357,25 @@ def getResultTable(df, set_df, treasury_result_df, start_date, end_date, asset) 
             bools.append(False)
     tmp_joined = joined[bools]
     if tmp_joined.empty :
-        return df
+        return df,abb_list
     df.loc[asset,'외국인'] = round(np.sum(tmp_joined['외국인 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
     df.loc[asset,'투신'] = round(np.sum(tmp_joined['자산운용(공모) 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
     df.loc[asset,'보험기금'] = round(np.sum(tmp_joined['보험기금 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
     df.loc[asset,'은행'] = round(np.sum(tmp_joined['은행 순매수 거래량'] * tmp_joined['델타'])/10**12,3)
     df.loc[asset,'증권'] = round(np.sum(tmp_joined['증권순매수(원)'] * tmp_joined['델타'])/10**12,3)
     df.loc[asset,'상장'] = round(np.sum(tmp_joined['낙찰금액'] * tmp_joined['델타'])/10**12,3)
+    if is_abb :
+        abb = list(tmp_joined['약어'])
+        abb_list.append({asset : abb})
     # df.loc[asset,'상장'] = round(np.sum(tmp_joined['상장잔액증감(원)'] * tmp_joined['델타'])/10**12,2)
-    return df
+    return df,abb_list
 
 def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-01', y5_day='2020-12-07') :
     calendar, holi = makeCalendar()
     last_df = pd.DataFrame()
     for i in range(21): # 0:5Y, 1:5Y+1, 2:5Y+2, 3:5Y+3, 4:5Y+4, 5:30Y, 6:30Y+1, 7:30Y+2, 8:30Y+3, 9:30Y+4, 10:3Y, 11:3Y+1, 12:3Y+2, 13:3Y+3, 14:3Y+4, 15:10Y, 16:10Y+1, 17:10Y+2, 18:10Y+3, 19:10Y+4
         last_df.loc[i,'3선'] = 0
-        last_df.loc[i,'3년'] = 0
+        last_df.loc[i,'3년이하'] = 0
         last_df.loc[i,'5년'] = 0
         last_df.loc[i,'7년'] = 0
         last_df.loc[i,'10선'] = 0
@@ -383,9 +386,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         last_df.loc[i,'10년이상'] = 0
         last_df.loc[i,'물가'] = 0
         last_df.loc[i,'total'] = 0
+        
     for i in range(21): # 0:5Y-3, 1:5Y, 2:5Y+1, 3:5Y+2, 4:5Y+3, 5:5Y+4, 6:30Y, 7:30Y+1, 8:30Y+2, 9:30Y+3, 10:30Y+4, 11:3Y, 12:3Y+1, 13:3Y+2, 14:3Y+3, 15:3Y+4, 16:10Y, 17:10Y+1, 18:10Y+2, 19:10Y+3, 20:10Y+4
         last_df.loc[i,'3선_avg'] = 0
-        last_df.loc[i,'3년_avg'] = 0
+        last_df.loc[i,'3년이하_avg'] = 0
         last_df.loc[i,'5년_avg'] = 0
         last_df.loc[i,'7년_avg'] = 0
         last_df.loc[i,'10선_avg'] = 0
@@ -536,40 +540,39 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                     continue
                 else :
                     cnt30y_4+=1       
-    
             treasury_result_df = setDfData(start_date, move_date,'treasury_vol')
             df3f = setDfData(start_date, move_date,'ktbf3y_vol')[::-1]
             df10f = setDfData(start_date, move_date,'ktbf10y_vol')[::-1]
             df3f.set_index('date', inplace=True)
             df10f.set_index('date', inplace=True)
             
-            cols = ['외국인','투신','보험기금','은행','증권','상장']
+            cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
             idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
             df = pd.DataFrame(columns=cols,index=idx)
             df.fillna(0,inplace=True)
             
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'2Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'3Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'5Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'7Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'10Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'15Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'20Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'30Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'50Y')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'물가')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'20원금')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'30원금')
-            df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'50원금')
+            abb_list=[]
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'2Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'3Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'5Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'7Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'10Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'15Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50Y')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20원금')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30원금')
+            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50원금')
             
             df.loc['3선','은행'] = sum(df3f.loc[move_date:start_date, '은행'] * future_df.iloc[0]['bpv']/10000)
             df.loc['3선','증권'] = sum(df3f.loc[move_date:start_date, '증권'] * future_df.iloc[0]['bpv']/10000)
             df.loc['10선','은행'] = sum(df10f.loc[move_date:start_date, '은행'] * future_df.iloc[1]['bpv']/10000)
             df.loc['10선','증권'] = sum(df10f.loc[move_date:start_date, '증권'] * future_df.iloc[1]['bpv']/10000)
             
-            
             last_df.loc[j,'3선_avg'] += (df.loc['3선','은행'] + df.loc['3선','증권'])
-            last_df.loc[j,'3년_avg'] += (df.loc['3Y','은행'] + df.loc['3Y','증권'])
+            last_df.loc[j,'3년이하_avg'] += (df.loc['2Y','은행'] + df.loc['2Y','증권']+df.loc['3Y','은행'] + df.loc['3Y','증권'])
             last_df.loc[j,'5년_avg'] += (df.loc['5Y','은행'] + df.loc['5Y','증권'])
             last_df.loc[j,'7년_avg'] += (df.loc['7Y','은행'] + df.loc['7Y','증권'])
             last_df.loc[j,'10선_avg'] += (df.loc['10선','은행'] + df.loc['10선','증권'])
@@ -1001,33 +1004,33 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         df3f.set_index('date', inplace=True)
         df10f.set_index('date', inplace=True)
         
-        cols = ['외국인','투신','보험기금','은행','증권','상장']
+        cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
         idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
         df = pd.DataFrame(columns=cols,index=idx)
         df.fillna(0,inplace=True)
         
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'2Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'3Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'5Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'7Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'10Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'15Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'20Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'30Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'50Y')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'물가')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'20원금')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'30원금')
-        df = getResultTable(df,set_df, treasury_result_df, start_date, move_date,'50원금')
-        
+        abb_list=[]
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'2Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'3Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'5Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'7Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'10Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'15Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50Y',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20원금',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30원금',True)
+        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50원금',True)
+     
         df.loc['3선','은행'] = sum(df3f.loc[move_date:start_date, '은행'] * future_df.iloc[0]['bpv']/10000)
         df.loc['3선','증권'] = sum(df3f.loc[move_date:start_date, '증권'] * future_df.iloc[0]['bpv']/10000)
         df.loc['10선','은행'] = sum(df10f.loc[move_date:start_date, '은행'] * future_df.iloc[1]['bpv']/10000)
         df.loc['10선','증권'] = sum(df10f.loc[move_date:start_date, '증권'] * future_df.iloc[1]['bpv']/10000)
         
-        
         last_df.loc[j,'3선'] = (df.loc['3선','은행'] + df.loc['3선','증권'])
-        last_df.loc[j,'3년'] = (df.loc['3Y','은행'] + df.loc['3Y','증권'])
+        last_df.loc[j,'3년이하'] = (df.loc['2Y','은행'] + df.loc['2Y','증권']+df.loc['3Y','은행'] + df.loc['3Y','증권'])
         last_df.loc[j,'5년'] = (df.loc['5Y','은행'] + df.loc['5Y','증권'])
         last_df.loc[j,'7년'] = (df.loc['7Y','은행'] + df.loc['7Y','증권'])
         last_df.loc[j,'10선'] = (df.loc['10선','은행'] + df.loc['10선','증권'])
@@ -1062,7 +1065,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         last_df.loc[i] -= tmp
     
     df0 = last_df[['total','total_avg']]
-    df1 = last_df[['3년','3년_avg']]
+    df1 = last_df[['3년이하','3년이하_avg']]
     df2 = last_df[['3선', '3선_avg']]
     df3 = last_df[['5년','5년_avg']]
     df4 = last_df[['7년','7년_avg']]
@@ -1076,7 +1079,6 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11]
     
-    
     barplot_diff=[] # 델타괴리 barplot diff
     
     """테너별 plot"""
@@ -1086,8 +1088,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         
         first_diff = df.iloc[target_idx][0] - df.iloc[target_idx][1]
         second_diff = df.iloc[target_idx-1][0] - df.iloc[target_idx-1][1]         
-        # print(first_diff, second_diff)
-        # title = df.columns[0] + "(전일비괴리 :" + + ")"
+
         diff = round(first_diff-second_diff,1)
         barplot_diff.append(diff)
         title = f'{df.columns[0]} / 전일대비 괴리 변화 : {diff} 억원'
@@ -1095,15 +1096,34 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         plt.text(target_idx-1, 0, f'최근영업일\n{str(target_date)[5:10]}')
         ax.set_title(title)
         ax.set_ylabel('억원')
-        ax.set_xlabel(f"\n {str(calendar.loc[month,'3Y'])[5:10]} : 3Y입찰 / {str(calendar.loc[month,'10Y'])[5:10]} : 10Y입찰 / {str(calendar.loc[month,'5Y'])[5:10]} : 5Y입찰 / {str(calendar.loc[month,'30Y'])[5:10]} : 30Y입찰")
+        label = f"\n {str(calendar.loc[month,'3Y'])[5:10]} : 3Y입찰 / {str(calendar.loc[month,'10Y'])[5:10]} : 10Y입찰 / {str(calendar.loc[month,'5Y'])[5:10]} : 5Y입찰 / {str(calendar.loc[month,'30Y'])[5:10]} : 30Y입찰\n"
+        if df.columns[0] == '3년이하':
+            label += ", ".join(sorted(list(set(abb_list[0]['2Y']))))+"\n"
+            label += ", ".join(sorted(list(set(abb_list[1]['3Y']))))
+        elif df.columns[0] == '5년':
+            label += ", ".join(sorted(list(set(abb_list[2]['5Y']))))
+        elif df.columns[0] == '10년':
+            label += ", ".join(sorted(list(set(abb_list[4]['10Y']))))
+        elif df.columns[0] == '15년~20년':
+            label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
+            label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
+            label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
+        elif df.columns[0] == '30년이상':
+            label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
+            label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
+            label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
+            label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))
+        elif df.columns[0] == '물가':
+            label += ", ".join(set(abb_list[9]['물가']))    
+        ax.set_xlabel(label)
         ax.xaxis.grid(True)
         ax.yaxis.grid(True)
         ax.legend(loc='lower right', ncol=2, bbox_to_anchor=(1,-0.5))   
         
     """델타괴리 bar plot 표시"""
-    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
-    pos = [0.0]*11    
-    pos[0]=barplot_df.loc['3년','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
+    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년이하','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
+    pos = [0.0]*11
+    pos[0]=barplot_df.loc['3년이하','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
     pos[1]=barplot_df.loc['3선','val'] = df2.iloc[target_idx][0] - df2.iloc[target_idx][1]
     pos[2]=barplot_df.loc['5년','val'] = df3.iloc[target_idx][0] - df3.iloc[target_idx][1]
     pos[3]=barplot_df.loc['7년','val'] = df4.iloc[target_idx][0] - df4.iloc[target_idx][1]
@@ -1120,23 +1140,15 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     del barplot_diff[-1]
     ax = barplot_df.plot.bar(rot=0)
     for i, v in enumerate(barplot_diff):
-        t = pos[i]
+        y = t = pos[i]
         if t < 0 :
             t = 1
-            pos[i] -= 1.3
+            y -= 1.3
         else :
             t = -2
-        plt.text(i-0.4, pos[i], '{0:+}'.format(round(pos[i]),2), fontsize = 13, color='black', fontweight='bold')
+        plt.text(i-0.4, y, '{0:+}'.format(round(pos[i]),2), fontsize = 13, color='black', fontweight='bold')
         plt.text(i-0.4, t, '({0:+})'.format(v), fontsize = 10, color='black', weight='bold')
-    # for i, v in enumerate(barplot_diff):
-    #     t = pos[i]
-    #     if t < 0 :
-    #         t = t-0.5
-    #     else :
-    #         t = t+0.2
-    #     plt.text(i-0.4, t, '{0:+}'.format(round(pos[i]),2), fontsize = 13, color='black', fontweight='bold')
-    #     plt.text(i-0.4, t-1.8, '({0:+})'.format(v), fontsize = 11, color='black', weight='bold')
-        
+
     plt.xticks(rotation=45)
     plt.axvline(8.5, color='grey')
     ax.set_ylabel('억원')
@@ -1150,4 +1162,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-calendar,last_df = showDeltaflow(date='2021-08-30', month=8)
+# calendar,last_df = showDeltaflow(date='2021-08-31', month=8)
+# calendar,last_df = showDeltaflow()
