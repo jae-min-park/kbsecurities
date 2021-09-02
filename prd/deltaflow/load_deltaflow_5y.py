@@ -338,6 +338,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
                     calendar.loc[12,'N+2'] = day+ pd.Timedelta(days=2)
                     calendar.loc[12,'N+3'] = day+ pd.Timedelta(days=3)
                     calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
+                
         i+=1
     for i in range(2,13) :
         calendar.loc[i-1,'5Y':]= calendar.loc[i,'5Y':]
@@ -890,6 +891,11 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
                 dates.append(str(move_date)[5:10])            
         if j == 15:
             move_date = calendar.loc[month,'10Y+4']
+            
+            # 추석특집 임시코드!! 
+            if month == 9 :
+                move_date = pd.Timestamp('2021-09-23')
+            
             if move_date == 0:
                 calendar.loc[month,'10Y+4']=move_date = calendar.loc[month,'10Y+3']
                 dates.append('공백')
@@ -1111,12 +1117,12 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
+            # label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
         elif df.columns[0] == '30년이상':
             label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))
+            # label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
+            # label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))
         elif df.columns[0] == '물가':
             label += ", ".join(set(abb_list[9]['물가']))    
         ax.set_xlabel(label)
@@ -1166,4 +1172,4 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
 
     return calendar, last_df
     
-# cal, last_df = showDeltaflow()
+cal, last_df = showDeltaflow('2021-09-23')

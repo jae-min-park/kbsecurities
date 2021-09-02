@@ -147,35 +147,35 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
     for day in auct5['5년최근'] :
         is_mon_holi = ''
         if auct5.loc[i-1,'요일'] == 'Mon':
-            calendar.loc[i+1,'5Y'] = day
+            calendar.loc[i,'5Y'] = day
         else :
-            calendar.loc[i+1,'5Y'] = day
+            calendar.loc[i,'5Y'] = day
             if auct5.loc[i-1,'요일'] == 'Tue':
                 is_mon_holi='Tue'
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Wed':
                 is_mon_holi='Wed'
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Thu':
                 is_mon_holi='Thu'
-                calendar.loc[i+1,'5Y+2'] = 0
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+2'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
             elif auct5.loc[i-1,'요일'] == 'Fri':
                 is_mon_holi='Fri'
-                calendar.loc[i+1,'5Y+1'] = 0
-                calendar.loc[i+1,'5Y+2'] = 0
-                calendar.loc[i+1,'5Y+3'] = 0
-                calendar.loc[i+1,'5Y+4'] = 0
+                calendar.loc[i,'5Y+1'] = 0
+                calendar.loc[i,'5Y+2'] = 0
+                calendar.loc[i,'5Y+3'] = 0
+                calendar.loc[i,'5Y+4'] = 0
         if is_mon_holi != 'Fri' and (day + pd.Timedelta(days=1)) not in holidays :
-            calendar.loc[i+1,'5Y+1'] = day + pd.Timedelta(days=1)
+            calendar.loc[i,'5Y+1'] = day + pd.Timedelta(days=1)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and (day + pd.Timedelta(days=2)) not in holidays :
-            calendar.loc[i+1,'5Y+2'] = day + pd.Timedelta(days=2)
+            calendar.loc[i,'5Y+2'] = day + pd.Timedelta(days=2)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and is_mon_holi != 'Wed' and (day + pd.Timedelta(days=3)) not in holidays :
-            calendar.loc[i+1,'5Y+3'] = day + pd.Timedelta(days=3)
+            calendar.loc[i,'5Y+3'] = day + pd.Timedelta(days=3)
         if is_mon_holi != 'Fri' and is_mon_holi != 'Thu' and is_mon_holi != 'Wed' and is_mon_holi != 'Tue' and (day + pd.Timedelta(days=4)) not in holidays :
-            calendar.loc[i+1,'5Y+4'] = day + pd.Timedelta(days=4)
+            calendar.loc[i,'5Y+4'] = day + pd.Timedelta(days=4)
         i+=1
     
     """정상코드"""
@@ -1157,4 +1157,4 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# cal,last_df = showDeltaflow('2021-08-20',7)
+# cal,last_df = showDeltaflow('2021-09-13',8)

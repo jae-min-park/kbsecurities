@@ -62,7 +62,9 @@ def insertSettings(df, table):
         _5 = str(df.iloc[i][2]) # 엘타
         _6 = str(df.iloc[i][3]) # 연물분류
         _7 = str(df.iloc[i][4]) # 듀레이션
-        sql = "insert into "+table+" values ('"+_1 +"','"+_2+ "','"+_3+"','"+_4+"',"+_5+",'"+_6+"',"+_7+');'
+        _8 = str(df.iloc[i][5]) # 약어
+        sql = "insert into "+table+" values ('"+_1 +"','"+_2+ "','"+_3+"','"+_4+"',"+_5+",'"+_6+"',"+_7+",'"+_8+"');"
+        print(sql)
         cursor.execute(sql)
     test_db.commit()
 
@@ -145,7 +147,7 @@ future_df.drop(['조회일','코드'], axis=1, inplace=True)
 
 """국고채 델티, 듀레이션 설정 data"""
 set_df = pd.read_excel('sugup_ver1.2.xlsx', sheet_name='설정')
-set_df = set_df[['종목코드','한글종목명','만기일','델타','연물분류','듀레이션']]
+set_df = set_df[['종목코드','한글종목명','만기일','델타','연물분류','듀레이션','약어']]
 set_df.dropna(inplace=True)
 set_df['조회일'] = str(datetime.today())[:10]
 set_df.index = [set_df['조회일'], set_df['종목코드']]
@@ -158,6 +160,11 @@ bid_amount_df  = pd.read_excel('bid_amount.xlsx',header = 2)
 # bid_amount_df = bid_amount_df[bid_amount_df['구분'] =='경쟁']
 bid_amount_df = bid_amount_df[['입찰일','표준코드','구분','낙찰금액']]
 bid_amount_df.rename(columns={'입찰일':'일자', '표준코드':'종목코드'}, inplace=True)
+
+tmp = bid_amount_df[bid_amount_df['구분']=='조기환매']
+for i in tmp.index : 
+    bid_amount_df.loc[i,'낙찰금액'] = -bid_amount_df.loc[i,'낙찰금액']
+
 bid_amount_df = bid_amount_df['낙찰금액'].groupby([bid_amount_df['일자'],bid_amount_df['종목코드']]).sum()
 # bid_amount_df.set_index(['일자','종목코드'],inplace=True)
 # bid_amount_df['낙찰금액'] = bid_amount_df['낙찰금액']*1000000
@@ -360,13 +367,13 @@ summary_df.loc['30년이상', '은증'] = df.loc['30Y','은행']+df.loc['50Y','�
 #%%
 
 
-"""일별 선물정보 - bpv"""
+# """일별 선물정보 - bpv"""
 insertInfoFutures(future_df, 'futures_bpv')
 
-""" 일별 세팅 data DB에 추가 """
+# """ 일별 세팅 data DB에 추가 """
 insertSettings(set_df, 'setting_delta')
 
-"""일별 3선 10선 DB에 데이터 추가 """
+# """일별 3선 10선 DB에 데이터 추가 """
 # start_date = pd.Timestamp('2021-08-19')
 tmp = setDfData('2018-01-01','9999-12-31','ktbf3y_vol')
 start_date = pd.Timestamp(str(tmp['date'].iloc[-1]+pd.Timedelta(days=1))[:10])
@@ -379,7 +386,7 @@ insertKtbf(df3f, 'ktbf3y_vol', start_date, end_date)
 start_date = str(datetime.now()-pd.Timedelta(days=1))[:10]
 end_date = str(datetime.now())[:10]
 
-"""일별 국고 data DB에 추가 """
+# """일별 국고 data DB에 추가 """
 insertTreasury(treasury_result_df, 'treasury_vol', '2018-01-01', end_date)
 
     
