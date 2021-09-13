@@ -585,18 +585,18 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                                             df.loc['7Y','은행']+df.loc['7Y','증권']
                                             )
             last_df.loc[j,'10년이상_avg'] += (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
-                                           df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                           df.loc['물가','은행']+df.loc['물가','증권']
-                                           )
+                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
+                                            df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                            df.loc['물가','은행']+df.loc['물가','증권']
+                                            )
             last_df.loc[j,'물가_avg'] += (df.loc['물가','은행']+df.loc['물가','증권'])                        
             last_df.loc[j,'total_avg'] += (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
-                                           df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
-                                           df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
-                                           df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                           df.loc['물가','은행']+df.loc['물가','증권']
-                                           )
+                                            df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
+                                            df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
+                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
+                                            df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                            df.loc['물가','은행']+df.loc['물가','증권']
+                                            )
     
     last_df.loc[0,:] /= cnt
     last_df.loc[1,:] /= cnt10y
@@ -1045,10 +1045,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                                         df.loc['7Y','은행']+df.loc['7Y','증권']
                                         )
         last_df.loc[j,'10년이상'] = (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
-                                       df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                       df.loc['물가','은행']+df.loc['물가','증권']
-                                       )
+                                        df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
+                                        df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
+                                        df.loc['물가','은행']+df.loc['물가','증권']
+                                        )
         last_df.loc[j,'물가'] += (df.loc['물가','은행']+df.loc['물가','증권'])        
         last_df.loc[j,'total'] = (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
                                 df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
@@ -1104,12 +1104,22 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
-        elif df.columns[0] == '30년이상':
+            if '20원금' in abb_list[10].keys() :
+                label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
+        elif '30년이상' in df.columns[0]:
             label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))
+            if '30원금' in abb_list[10].keys():
+                label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
+            elif '30원금' in abb_list[11].keys():
+                label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
+            if '50원금' in abb_list[10].keys():
+                label += ", ".join(sorted(list(set(abb_list[10]['50원금']))))+", "
+            elif '50원금' in abb_list[11].keys():
+                label += ", ".join(sorted(list(set(abb_list[11]['50원금']))))+", "
+            elif '50원금' in abb_list[12].keys() :
+                label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))+", "
+                
         elif df.columns[0] == '물가':
             label += ", ".join(set(abb_list[9]['물가']))    
         ax.set_xlabel(label)
