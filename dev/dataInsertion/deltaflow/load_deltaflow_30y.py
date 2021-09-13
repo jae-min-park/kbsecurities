@@ -1096,7 +1096,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         plt.text(target_idx-1, 0, f'최근영업일\n{str(target_date)[5:10]}')
         ax.set_title(title)
         ax.set_ylabel('억원')
-        label = f"\n {str(calendar.loc[month,'3Y'])[5:10]} : 3Y입찰 / {str(calendar.loc[month,'10Y'])[5:10]} : 10Y입찰 / {str(calendar.loc[month,'5Y'])[5:10]} : 5Y입찰 / {str(calendar.loc[month,'30Y'])[5:10]} : 30Y입찰\n"
+        label = f"\n {str(calendar.loc[month,'30Y'])[5:10]} : 30Y입찰 / {str(calendar.loc[month,'3Y'])[5:10]} : 3Y입찰 / {str(calendar.loc[month,'10Y'])[5:10]} : 10Y입찰 / {str(calendar.loc[month,'5Y'])[5:10]} : 5Y입찰 \n"
         if df.columns[0] == '3년이하':
             label += ", ".join(sorted(list(set(abb_list[0]['2Y']))))+"\n"
             label += ", ".join(sorted(list(set(abb_list[1]['3Y']))))
@@ -1107,12 +1107,22 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
-        elif df.columns[0] == '30년이상':
+            if '20원금' in abb_list[10].keys() :
+                label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
+        elif '30년이상' in df.columns[0]:
             label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))
+            if '30원금' in abb_list[10].keys():
+                label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
+            elif '30원금' in abb_list[11].keys():
+                label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
+            if '50원금' in abb_list[10].keys():
+                label += ", ".join(sorted(list(set(abb_list[10]['50원금']))))+", "
+            elif '50원금' in abb_list[11].keys():
+                label += ", ".join(sorted(list(set(abb_list[11]['50원금']))))+", "
+            elif '50원금' in abb_list[12].keys() :
+                label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))+", "
+
         elif df.columns[0] == '물가':
             label += ", ".join(set(abb_list[9]['물가']))    
         ax.set_xlabel(label)
