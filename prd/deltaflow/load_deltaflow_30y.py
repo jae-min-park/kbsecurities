@@ -332,13 +332,13 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
                         calendar.loc[j,'N+2'] = day+ pd.Timedelta(days=2)
                         calendar.loc[j,'N+3'] = day+ pd.Timedelta(days=3)
                         calendar.loc[j,'N+4'] = day+ pd.Timedelta(days=4)
-            if type(calendar.loc[j, '5Y']) != int:
-                if calendar.loc[12, '5Y'] <= day :
-                    calendar.loc[12,'N'] = day
-                    calendar.loc[12,'N+1'] = day+ pd.Timedelta(days=1)
-                    calendar.loc[12,'N+2'] = day+ pd.Timedelta(days=2)
-                    calendar.loc[12,'N+3'] = day+ pd.Timedelta(days=3)
-                    calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
+            # if type(calendar.loc[j, '5Y']) != int:
+            #     if calendar.loc[12, '5Y'] <= day :
+            #         calendar.loc[12,'N'] = day
+            #         calendar.loc[12,'N+1'] = day+ pd.Timedelta(days=1)
+            #         calendar.loc[12,'N+2'] = day+ pd.Timedelta(days=2)
+            #         calendar.loc[12,'N+3'] = day+ pd.Timedelta(days=3)
+            #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
         i+=1
     
     for i in range(2,13) :
@@ -398,7 +398,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         last_df.loc[i,'30년이상_avg'] = 0
         last_df.loc[i,'10년미만_avg'] = 0
         last_df.loc[i,'10년이상_avg'] = 0
-        last_df.loc[i,'물가_avg'] = 0        
+        # last_df.loc[i,'물가_avg'] = 0        
         last_df.loc[i,'total_avg'] = 0
     
     future_df = setDfData(date, date,'futures_bpv')
@@ -547,7 +547,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
             df10f.set_index('date', inplace=True)
             
             cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
-            idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
+            # idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
+            idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
             df = pd.DataFrame(columns=cols,index=idx)
             df.fillna(0,inplace=True)
             
@@ -561,7 +562,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20Y')
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30Y')
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50Y')
-            df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가')
+            # df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가')
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20원금')
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30원금')
             df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50원금')
@@ -589,16 +590,16 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
             
             last_df.loc[j,'10년이상_avg'] += (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                           df.loc['물가','은행']+df.loc['물가','증권']
+                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                           # df.loc['물가','은행']+df.loc['물가','증권']
                                            )
-            last_df.loc[j,'물가_avg'] += (df.loc['물가','은행']+df.loc['물가','증권'])              
+            # last_df.loc[j,'물가_avg'] += (df.loc['물가','은행']+df.loc['물가','증권'])              
             last_df.loc[j,'total_avg'] += (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
                                            df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
                                            df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
                                            df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
-                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                           df.loc['물가','은행']+df.loc['물가','증권']
+                                           df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                           # df.loc['물가','은행']+df.loc['물가','증권']
                                            )
     
     last_df.loc[0,:] /= cnt
@@ -1005,7 +1006,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         df10f.set_index('date', inplace=True)
         
         cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
-        idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
+        # idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
+        idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
         df = pd.DataFrame(columns=cols,index=idx)
         df.fillna(0,inplace=True)
         
@@ -1019,7 +1021,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20Y',True)
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30Y',True)
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50Y',True)
-        df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가',True)
+        # df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'물가',True)
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'20원금',True)
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'30원금',True)
         df,abb_list = getResultTable(df,abb_list,set_df, treasury_result_df, start_date, move_date,'50원금',True)
@@ -1047,16 +1049,16 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         
         last_df.loc[j,'10년이상'] = (df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권']+
                                        df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권']+
-                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                       df.loc['물가','은행']+df.loc['물가','증권']
+                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                       # df.loc['물가','은행']+df.loc['물가','증권']
                                        )
-        last_df.loc[j,'물가'] += (df.loc['물가','은행']+df.loc['물가','증권'])                                        
+        # last_df.loc[j,'물가'] += (df.loc['물가','은행']+df.loc['물가','증권'])                                        
         last_df.loc[j,'total'] = (df.loc['3선','은행'] + df.loc['3선','증권'] + df.loc['3Y','은행'] + df.loc['3Y','증권'] +
                                        df.loc['5Y','은행'] + df.loc['5Y','증권'] + df.loc['7Y','은행'] + df.loc['7Y','증권'] +
                                        df.loc['10Y','은행']+df.loc['10선','은행'] + df.loc['10Y','증권']+df.loc['10선','증권'] +
                                        df.loc['15Y','은행']+df.loc['20Y','은행']+df.loc['20원금','은행'] + df.loc['15Y','증권']+df.loc['20Y','증권']+df.loc['20원금','증권'] +
-                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']+
-                                       df.loc['물가','은행']+df.loc['물가','증권']
+                                       df.loc['30Y','은행']+df.loc['50Y','은행']+df.loc['30원금','은행']+df.loc['50원금','은행'] + df.loc['30Y','증권']+df.loc['50Y','증권']+df.loc['30원금','증권']+df.loc['50원금','증권']
+                                       # df.loc['물가','은행']+df.loc['물가','증권']
                                        )
     
     
@@ -1075,9 +1077,9 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     df8 = last_df[['10선','10선_avg']]
     df9 = last_df[['15년~20년','15년~20년_avg']]
     df10 = last_df[['30년이상','30년이상_avg']]
-    df11 = last_df[['물가','물가_avg']]
+    # df11 = last_df[['물가','물가_avg']]
     
-    dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11]
+    dfs = [df0, df1,df2,df3,df4,df5,df6,df7,df8,df9,df10]
     
     barplot_diff=[] # 델타괴리 barplot diff
     
@@ -1122,17 +1124,17 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                 label += ", ".join(sorted(list(set(abb_list[11]['50원금']))))+", "
             elif '50원금' in abb_list[12].keys() :
                 label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))+", "
-
-        elif df.columns[0] == '물가':
-            label += ", ".join(set(abb_list[9]['물가']))    
+        # elif df.columns[0] == '물가':
+        #     label += ", ".join(set(abb_list[9]['물가']))    
         ax.set_xlabel(label)
         ax.xaxis.grid(True)
         ax.yaxis.grid(True)
         ax.legend(loc='lower right', ncol=2, bbox_to_anchor=(1,-0.5))   
         
     """델타괴리 bar plot 표시"""
-    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년이하','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
-    pos = [0.0]*11
+    # barplot_df = pd.DataFrame(columns= ['val'], index= ['3년이하','3선','5년','7년','10년','10선','15년~20년','30년이상','물가','10년미만','10년이상'])
+    barplot_df = pd.DataFrame(columns= ['val'], index= ['3년이하','3선','5년','7년','10년','10선','15년~20년','30년이상','10년미만','10년이상'])
+    pos = [0.0]*10
     pos[0]=barplot_df.loc['3년이하','val'] = df1.iloc[target_idx][0] - df1.iloc[target_idx][1]
     pos[1]=barplot_df.loc['3선','val'] = df2.iloc[target_idx][0] - df2.iloc[target_idx][1]
     pos[2]=barplot_df.loc['5년','val'] = df3.iloc[target_idx][0] - df3.iloc[target_idx][1]
@@ -1141,11 +1143,12 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     pos[5]=barplot_df.loc['10선','val'] = df8.iloc[target_idx][0] - df8.iloc[target_idx][1]
     pos[6]=barplot_df.loc['15년~20년','val'] = df9.iloc[target_idx][0] - df9.iloc[target_idx][1]
     pos[7]=barplot_df.loc['30년이상','val'] = df10.iloc[target_idx][0] - df10.iloc[target_idx][1]
-    pos[8]=barplot_df.loc['물가','val'] = df11.iloc[target_idx][0] - df11.iloc[target_idx][1]    
-    pos[9]=barplot_df.loc['10년미만','val'] = df5.iloc[target_idx][0] - df5.iloc[target_idx][1]
-    pos[10]=barplot_df.loc['10년이상','val'] = df6.iloc[target_idx][0] - df6.iloc[target_idx][1]
+    # pos[8]=barplot_df.loc['물가','val'] = df11.iloc[target_idx][0] - df11.iloc[target_idx][1]    
+    pos[8]=barplot_df.loc['10년미만','val'] = df5.iloc[target_idx][0] - df5.iloc[target_idx][1]
+    pos[9]=barplot_df.loc['10년이상','val'] = df6.iloc[target_idx][0] - df6.iloc[target_idx][1]
     
-    barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[11],barplot_diff[5],barplot_diff[6]
+    # barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[11],barplot_diff[5],barplot_diff[6]
+    barplot_diff[0],barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[5],barplot_diff[6],barplot_diff[7],barplot_diff[8],barplot_diff[9] = barplot_diff[1],barplot_diff[2],barplot_diff[3],barplot_diff[4],barplot_diff[7],barplot_diff[8],barplot_diff[9],barplot_diff[10],barplot_diff[5],barplot_diff[6]
     
     del barplot_diff[-1]
     ax = barplot_df.plot.bar(rot=0)
@@ -1160,7 +1163,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         plt.text(i-0.4, t, '({0:+})'.format(v), fontsize = 10, color='black', weight='bold')
 
     plt.xticks(rotation=45)
-    plt.axvline(8.5, color='grey')
+    plt.axvline(7.5, color='grey')
     ax.set_ylabel('억원')
     ax.set_xlabel('테너')
     title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (괄호안 전일비)'
@@ -1172,5 +1175,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# calendar,last_df = showDeltaflow(date='2021-08-31', month=8)
-# calendar,last_df = showDeltaflow()
+# calendar,last_df = showDeltaflow(date='2021-10-05', month=9)
+# calendar,last_df = showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')

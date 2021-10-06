@@ -367,10 +367,10 @@ summary_df.loc['30년이상', '은증'] = df.loc['30Y','은행']+df.loc['50Y','�
 #%%
 
 
-# """일별 선물정보 - bpv"""
+# # """일별 선물정보 - bpv"""
 insertInfoFutures(future_df, 'futures_bpv')
 
-# """ 일별 세팅 data DB에 추가 """
+# # """ 일별 세팅 data DB에 추가 """
 insertSettings(set_df, 'setting_delta')
 
 # """일별 3선 10선 DB에 데이터 추가 """
