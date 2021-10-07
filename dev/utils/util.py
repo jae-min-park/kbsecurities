@@ -219,3 +219,47 @@ def getPriceTodayMostTraded(dfmkt, today):
     """
     pass
 
+def reportSummary(dfpl, show_hist="n"):
+    """
+    일별 손익('pl'컬럼)을 담고 있는 dataframe을 받아서 
+     1. 요약 보고서를 출력 (히스토그램 포함)
+     2. 월/연 손익 dataframe 리턴
+
+    Parameters
+    ----------
+    dfpl : 일별 손익('pl'컬럼)을 담고 있는 dataframe
+        
+    Returns
+    -------
+    월별손익 dataframe
+    연별손익 dataframe
+
+    """
+    
+    # 히스토그램 출력
+    if show_hist == "Y":
+        dfpl.pl.hist(bins=int(max(0.25*len(dfpl.pl), 1)))
+        
+    dfpl.pl.fillna(value=0, inplace=True)
+    # Annualized SR 출력
+    annSR = round( dfpl.pl.mean() / dfpl.pl.std() * 250 / (250 ** 0.5), 2)
+    print(f'Annualized SR : {annSR}')
+    
+    # dfpl의 index가 datetimeindex가 아니고 date 컬럼이 있으면
+    if str(type(dfpl.index)) != "<class 'pandas.core.indexes.datetimes.DatetimeIndex'>" :
+        if 'date' in dfpl.columns:
+            dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+        else: 
+            raise NameError('date column missing')
+    
+    
+    # 월손익, 연손익 PL 자료 출력
+    dfpl_mon = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).agg({'pl':'sum', 'num_trade':'sum'})
+    print(dfpl_mon)
+    dfpl_yr = dfpl.groupby(by=[dfpl.index.year]).agg({'pl':'sum', 'num_trade':'sum'})
+    print(dfpl_yr)
+    
+    return dfpl_mon, dfpl_yr
+    
+    
+
