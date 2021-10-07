@@ -1169,7 +1169,7 @@ def crossTest(ema_fast, ema_slow, margin=0.5):
     elif ema_fast < ema_slow:
         cross_status = "below"
     else:
-        raise NameError("Unexpected!!!")
+        raise NameError("Unexpected! Check margin value!")
         
     return cross_status
     

@@ -16,17 +16,17 @@ def main():
     
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC().index)
-    # ld = [d for d in ld if d.year==2021 ]
-    ld = [d for d in ld if d.year==2021 and d.month == 6]
-    ld = [datetime.date(2021, 6, 28)]
+    ld = [d for d in ld if d.year==2021 ]
+    # ld = [d for d in ld if d.year == 2016 ]
+    # ld = [datetime.date(2021, 10, 6)]
     # 
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
         
-        result_ema = tradeEma(day, 'lktbf50vol', plot="N", execution="vwap", 
-                              fast_coeff=0.2,
+        result_ema = tradeEma(day, 'lktbf50vol', plot="Y", execution="vwap", 
+                              fast_coeff=0.30,
                               slow_coeff=0.05,
                               margin = 0.5)
         
@@ -65,8 +65,15 @@ def main():
 
 if __name__ == "__main__":
     dfpl, sig = main()
+    
+    dfpl.pl.hist(bins=int(0.25*len(dfpl.pl)))
+    annSR = round( dfpl.pl.mean() / dfpl.pl.std() * 250 / (250 ** 0.5), 2)
+    print(f'Annualized SR : {annSR}')
     dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
     print(dfpl_group)
+    
+    
+    
     
 
 

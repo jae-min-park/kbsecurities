@@ -18,28 +18,29 @@ date = dfmkt_3y.date[0]
 px_last_3y = dfmkt_3y.price.iloc[-1]
 
 result_ema_3y = tradeEma(date, 'ktbf200vol', plot="Y", execution="vwap", 
-                      fast_coeff=0.5,
-                      slow_coeff=0.1,
+                      fast_coeff=0.30,
+                      slow_coeff=0.05,
                       margin = 0.5, dfmkt=dfmkt_3y)
 
 sig_3y = result_ema_3y['df'] 
 
 sig_3y['amt'] = 2 
 sig_3y.at[sig_3y.index[0], 'amt'] = 1
+commission_3y = 0.05 * sig_3y.amt.sum() # 수수료 계약당 500원 가정
 
 pl_3y = sum(100 * sig_3y.direction.values * sig_3y.amt.values * (px_last_3y - sig_3y.price.values))
-pl_3y = round(pl_3y, 1)
+pl_3y = round(pl_3y - commission_3y, 1)
 
 print(f'현재가: {px_last_3y}  |  PL(틱): {pl_3y}  |  PL(백만원): {pl_3y*2}')
 
-
+#%%
 """10선 RT"""
 dfmkt = util.setRtData()
 date = dfmkt.date[0]
 px_last = dfmkt.price.iloc[-1]
 
 result_ema = tradeEma(date, 'lktbf50vol', plot="Y", execution="vwap",
-                      fast_coeff=0.15,
+                      fast_coeff=0.30,
                       slow_coeff=0.02,
                       margin = 0.5, dfmkt=dfmkt)
 
@@ -47,9 +48,10 @@ sig = result_ema['df']
 
 sig['amt'] = 2 
 sig.at[sig.index[0], 'amt'] = 1
+commission_10y = 0.05 * sig.amt.sum() # 수수료 계약당 500원 가정
 
 pl = sum(100 * sig.direction.values * sig.amt.values * (px_last - sig.price.values))
-pl = round(pl, 1)
+pl = round(pl - commission_10y, 1)
 print(f'현재가: {px_last}  |  PL(틱): {pl}  |  PL(백만원): {pl*0.5}')
 
 

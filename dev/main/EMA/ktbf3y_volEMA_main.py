@@ -17,7 +17,7 @@ def main():
     ld = list(util.getDailyOHLC(market_table_name='ktbf_day').index)
     # ld = [d for d in ld if d.year==2020 ]
     # ld = [d for d in ld if d.year==2021 and d.month == 6 and d.day > 25]
-    # ld = [datetime.date(2021, 6, 30)]
+    ld = [datetime.date(2021, 10, 6)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])

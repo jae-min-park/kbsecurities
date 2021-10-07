@@ -17,17 +17,17 @@ def main():
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC(market_table_name='usdkrw_day').index)
     # ld = [d for d in ld if d < datetime.date(2021,6,1)]
-    # ld = [d for d in ld if d.year==2021 and d.month==6]
+    ld = [d for d in ld if d.year==2021 and d.month >= 1]
     # ld = [d for d in ld if d.year==2020 and d.month==3]
-    ld = [datetime.date(2021, 6, 30)]
+    # ld = [datetime.date(2021, 10, 6)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'usdkrw200vol', plot="Y", execution="vwap", 
-                              fast_coeff=0.5,
-                              slow_coeff=0.05,
+        result_ema = tradeEma(day, 'usdkrw300vol', plot="Y", execution="vwap", 
+                              fast_coeff=0.20,
+                              slow_coeff=0.02,
                               margin = 0.5)
         
         timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y", asset='usdkrw')
@@ -66,5 +66,6 @@ if __name__ == "__main__":
     dfpl, sig = main()
     dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
     print(dfpl_group)
+    dfpl.pl.hist(bins=int(0.5*len(dfpl.pl)))
 
 
