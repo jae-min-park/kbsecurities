@@ -19,13 +19,13 @@ def main():
     # ld = [d for d in ld if d < datetime.date(2021,6,1)]
     ld = [d for d in ld if d.year==2021 and d.month >= 1]
     # ld = [d for d in ld if d.year==2020 and d.month==3]
-    # ld = [datetime.date(2021, 10, 6)]
+    # ld = [datetime.date(2021, 10, 12)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'usdkrw300vol', plot="Y", execution="vwap", 
+        result_ema = tradeEma(day, 'usdkrw200vol', plot="Y", execution="vwap", 
                               fast_coeff=0.20,
                               slow_coeff=0.02,
                               margin = 0.5)
@@ -58,14 +58,12 @@ def main():
               "\n---------------------------------------------------------------")
     
     dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    dfpl.drop(columns=['date'], inplace=True)
     
     return dfpl, result_ema['df']
 
 if __name__ == "__main__":
     dfpl, sig = main()
-    dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
-    print(dfpl_group)
-    dfpl.pl.hist(bins=int(0.5*len(dfpl.pl)))
+    
+    pl_mon, pl_yr = util.reportSummary(dfpl, show_hist="Y")
 
 

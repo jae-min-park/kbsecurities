@@ -38,11 +38,11 @@ print(f'현재가: {px_last_3y}  |  PL(틱): {pl_3y}  |  PL(백만원): {pl_3y*2
 dfmkt = util.setRtData()
 date = dfmkt.date[0]
 px_last = dfmkt.price.iloc[-1]
-
+#%%
 result_ema = tradeEma(date, 'lktbf50vol', plot="Y", execution="vwap",
-                      fast_coeff=0.30,
-                      slow_coeff=0.02,
-                      margin = 0.5, dfmkt=dfmkt)
+                      fast_coeff=0.20,
+                      slow_coeff=0.05,
+                      margin = 1.0, dfmkt=dfmkt)
 
 sig = result_ema['df'] 
 
@@ -54,7 +54,7 @@ pl = sum(100 * sig.direction.values * sig.amt.values * (px_last - sig.price.valu
 pl = round(pl - commission_10y, 1)
 print(f'현재가: {px_last}  |  PL(틱): {pl}  |  PL(백만원): {pl*0.5}')
 
-
+#%%
 """오늘PL 출력"""
 pl_today = round(pl_3y*2 + pl*0.5, 1)
 print(f'손익계(백만원): {pl_today}')

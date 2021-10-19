@@ -249,8 +249,13 @@ def reportSummary(dfpl, show_hist="n"):
     if str(type(dfpl.index)) != "<class 'pandas.core.indexes.datetimes.DatetimeIndex'>" :
         if 'date' in dfpl.columns:
             dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
+            dfpl.drop(columns='date', inplace=True)
         else: 
             raise NameError('date column missing')
+    # dfpl의 index가 datetimeindex인데, date column이 있으면 제거
+    else:
+        if 'date' in dfpl.columns:
+            dfpl.drop(columns='date', inplace=True)
     
     
     # 월손익, 연손익 PL 자료 출력

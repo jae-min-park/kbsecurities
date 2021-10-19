@@ -80,6 +80,8 @@ class Trade:
         return str(self.__dict__)
     
 
+# def intraLow
+
 def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
     """
     오후 저가 갱신하는 경우 추격매도하는 모멘텀 트레이딩
@@ -261,6 +263,7 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
     time_break = now
     # 1st trade test loop 끝
     
+    
     # 2nd trade test loop 시작
     # 1st trade가 종가청산이 아닌 경우에 아래 실행
     if time_break < trading_begins_before and (uno.is_losscut_traded or uno.is_pt_traded):
@@ -385,9 +388,9 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
 
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
-ld = [d for d in ld if d.year >= 2017]
-# ld = [d for d in ld if d.year >= 2021 and d.month>=9]
-ld = [d for d in ld if d == datetime.date(2021, 10, 6)]
+# ld = [d for d in ld if d.year == 2017]
+ld = [d for d in ld if d.year == 2021 and d.month >= 9]
+# ld = [d for d in ld if d > datetime.date(2021, 9, 24)]
 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
@@ -403,8 +406,8 @@ af_config = {'trading_begins_after': datetime.time(12,15,0),
              'ema_margin': 0.5,
              'lc_hi-lo': 1.0, 
              'lc_pl': -20, 
-             'pt_pl': 10,
-             'pt_draw_down': 0.30
+             'pt_pl': 20,
+             'pt_draw_down': 0.3
              }
 
 
@@ -436,6 +439,7 @@ for i, day in enumerate(ld):
     print(f'Cumul | cumsum: {cumsum}  mean:{mean}  SR: {sr}  trades: {num_trade_cumul}',
           "\n---------------------------------------------------------------")
 
-#결과 출력및 저장
-pl_mon, pl_yr = util.reportSummary(dfpl)
+# 결과 출력및 저장
+# dfpl 수정됨, call by reference
+pl_mon, pl_yr = util.reportSummary(dfpl, show_hist="n")
 

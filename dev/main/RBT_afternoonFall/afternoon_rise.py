@@ -17,6 +17,9 @@ sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
 import util
 import tradeLoi as tl
 
+import warnings
+# warnings.filterwarnings('error', category=UserWarning)
+warnings.filterwarnings(action='ignore')
 
 def afternoonRise(date, db_table, af_config, method="simple", plot="Y"):
     """
@@ -262,8 +265,8 @@ def afternoonRise(date, db_table, af_config, method="simple", plot="Y"):
 
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
-ld = [d for d in ld if d.year == 2017]
-# ld = [d for d in ld if d.year >= 2021]
+# ld = [d for d in ld if d.year >= 2017]
+ld = [d for d in ld if d.year >= 2021 ]
 # ld = [d for d in ld if d == datetime.date(2021, 9, 23)]
 
 #일간 PL을 기록하는 dataframe
@@ -271,16 +274,16 @@ dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
 
 # ld = list(pd.read_excel("AF_loss_days.xlsx").date)
 
-af_config = {'trading_begins_after': datetime.time(12,15,0),
-             'trading_begins_before': datetime.time(15,15,0),
+af_config = {'trading_begins_after': datetime.time(10,00,0),
+             'trading_begins_before': datetime.time(11,30,0),
              'ema_fast_coeff': 0.20,
              'ema_slow_coeff': 0.05,
              'thru': 0.5,
              'ema_margin': 0.5,
              'lc_hi-lo': 1.0, 
-             'lc_pl': -10, 
-             'pt_pl': 10,
-             'pt_draw_down': 0.50
+             'lc_pl': -30, 
+             'pt_pl': 5,
+             'pt_draw_down': 0.3
              }
 
 

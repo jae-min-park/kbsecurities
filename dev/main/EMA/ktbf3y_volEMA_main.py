@@ -15,18 +15,18 @@ def main():
     
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC(market_table_name='ktbf_day').index)
-    # ld = [d for d in ld if d.year==2020 ]
-    # ld = [d for d in ld if d.year==2021 and d.month == 6 and d.day > 25]
-    ld = [datetime.date(2021, 10, 6)]
+    # ld = [d for d in ld if d.year==2021 ]
+    # ld = [d for d in ld if d.year==2021 and d.month == 3 ]
+    ld = [datetime.date(2021, 10, 18)]
     
     #일간 PL을 기록하는 dataframe
     dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
     dfsig = pd.DataFrame()
     
     for i, day in enumerate(ld):
-        result_ema = tradeEma(day, 'ktbf200vol', plot="N", execution="vwap", 
-                              fast_coeff=0.5,
-                              slow_coeff=0.1,
+        result_ema = tradeEma(day, 'ktbf200vol', plot="Y", execution="vwap", 
+                              fast_coeff=0.50,
+                              slow_coeff=0.10,
                               margin = 0.5)
         
         timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="N", asset="ktbf")
@@ -59,17 +59,13 @@ def main():
         dfsig = dfsig.append(result_ema['df'])
 
     dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    dfpl.drop(columns=['date'], inplace=True)
-    
-    
     
     return dfpl, dfsig
 
 if __name__ == "__main__":
     dfpl, dfsig = main()
     
-    dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
-    print(dfpl_group)
+    pl_mon, pl_yr = util.reportSummary(dfpl, show_hist="n")
     
     
     

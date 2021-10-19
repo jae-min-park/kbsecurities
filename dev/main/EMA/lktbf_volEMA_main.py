@@ -16,24 +16,29 @@ def main():
     
     #일봉기준 전체 date list
     ld = list(util.getDailyOHLC().index)
-    ld = [d for d in ld if d.year==2021 ]
+    ld = [d for d in ld if d.year >= 2019]
+    # ld = [d for d in ld if d.year == 2021 and d.month==9]
     # ld = [d for d in ld if d.year == 2016 ]
-    # ld = [datetime.date(2021, 10, 6)]
+    ld = [datetime.date(2021, 10, 18)]
+    # ld = [d for d in ld if d == datetime.date(2021, 9, 28) or d == datetime.date(2021, 9, 29) or d == datetime.date(2021, 10, 13)]
+
     # 
     #일간 PL을 기록하는 dataframe
-    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
+    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade', 'siga_chg'])
     
     for i, day in enumerate(ld):
         
         result_ema = tradeEma(day, 'lktbf50vol', plot="Y", execution="vwap", 
-                              fast_coeff=0.30,
+                              fast_coeff=0.20,
                               slow_coeff=0.05,
                               margin = 0.5)
         
-        timelyPl = calPlEmaTimely(result_ema, timebin="1min", losscut="Y", asset="lktbf")
+        timelyPl = calPlEmaTimely(result_ema, timebin="5min", losscut="n", asset="lktbf")
         
         dfpl.at[i, 'date'] = day
-        
+        yday_close = util.getYdayOHLC(day, table='lktbf_day')['close']
+        siga = util.getDailyOHLC(day, day, market_table_name='lktbf_day')['open'][0]
+        dfpl.at[i, 'siga_chg'] = siga - yday_close
         
         num_trade = timelyPl.num_trade[-1]
         dfpl.at[i, 'num_trade'] = num_trade
@@ -58,19 +63,13 @@ def main():
               "\n---------------------------------------------------------------")
     
     dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    dfpl.drop(columns=['date'], inplace=True)
-
     
     return dfpl, result_ema['df']
 
 if __name__ == "__main__":
     dfpl, sig = main()
     
-    dfpl.pl.hist(bins=int(0.25*len(dfpl.pl)))
-    annSR = round( dfpl.pl.mean() / dfpl.pl.std() * 250 / (250 ** 0.5), 2)
-    print(f'Annualized SR : {annSR}')
-    dfpl_group = dfpl.groupby(by=[dfpl.index.year, dfpl.index.month]).sum()
-    print(dfpl_group)
+    pl_mon, pl_yr = util.reportSummary(dfpl.copy(), show_hist="n")
     
     
     
