@@ -6,12 +6,7 @@ Created on Wed Oct 13 10:20:11 2021
 """
 
 import pandas as pd
-from matplotlib import pyplot as plt
-import numpy as np
-import math
 import datetime
-import os
-from tqdm import tqdm
 import sys
 sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
 import util
@@ -20,11 +15,10 @@ import emaDynaRisk as edr
 
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
-# ld = [d for d in ld if d.year >= 2017 and d.year <= 2018]
-# ld = [d for d in ld if d.year >= 2019]
-ld = [d for d in ld if d.year == 2014 ]
+ld = [d for d in ld if d.year >= 2019 ]
+# ld = [d for d in ld if d.year == 2020 and d.month == 3]
 # ld = [d for d in ld if d == datetime.date(2021, 9, 28) or d == datetime.date(2021, 9, 29) or d == datetime.date(2021, 10, 13)]
-# ld = [d for d in ld if d == datetime.date(2021, 10, 22)]
+# ld = [d for d in ld if d == datetime.date(2016, 4, 12)]
 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
@@ -45,13 +39,13 @@ for i, day in enumerate(ld):
     
     result = edr.tradeEmaDynamicRisk(
         day,
-        db_table='lktbf50vol',
-        fast_coeff=0.025, 
-        slow_coeff=0.005, 
+        db_table='ktbf300vol',
+        fast_coeff=0.20, 
+        slow_coeff=0.03, 
         tick_cross_margin=0.5,
         window_ref=5,
-        max_qty=100,
-        max_trade_qty=10,
+        max_qty=500,
+        max_trade_qty=80,
         method = "linear",
         losscut = "Y"
         )
