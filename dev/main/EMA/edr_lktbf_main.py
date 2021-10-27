@@ -22,10 +22,10 @@ import emaDynaRisk as edr
 ld = list(util.getDailyOHLC().index)
 # ld = [d for d in ld if d.year >= 2017 and d.year <= 2018]
 # ld = [d for d in ld if d.year >= 2019]
-ld = [d for d in ld if d.year == 2014 ]
+# ld = [d for d in ld if d.year == 2019 ]
 # ld = [d for d in ld if d == datetime.date(2021, 9, 28) or d == datetime.date(2021, 9, 29) or d == datetime.date(2021, 10, 13)]
-# ld = [d for d in ld if d == datetime.date(2021, 10, 22)]
-
+ld = [d for d in ld if d == datetime.date(2019, 12, 13)]
+# 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
 
@@ -46,8 +46,8 @@ for i, day in enumerate(ld):
     result = edr.tradeEmaDynamicRisk(
         day,
         db_table='lktbf50vol',
-        fast_coeff=0.025, 
-        slow_coeff=0.005, 
+        fast_coeff=0.050, 
+        slow_coeff=0.015, 
         tick_cross_margin=0.5,
         window_ref=5,
         max_qty=100,

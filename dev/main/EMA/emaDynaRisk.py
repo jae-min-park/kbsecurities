@@ -149,8 +149,10 @@ def tradeEmaDynamicRisk(date,
     diff_std = np.std(ar_diff_window)
     # print(ar_diff_window.mean(), 2*ar_diff_window.std())
     
-    # 최근 N일의 diff 분포에서 1.5 sigma에 해당하는 diff에 도달하면 max qty가 되도록 수량 설정
-    # 2 sigma로 설정하여 전체 trading time에서 5%의 시간에 max_qty를 보유하는 것으로 설정
+    # 최근 N일의 diff 분포에서 N sigma에 해당하는 diff에 도달하면 max qty가 되도록 수량 설정
+    # 2.0 sigma로 설정하여 전체 trading time에서 4.6%의 빈도로 max_qty를 보유하는 것으로 설정
+    # 1.5 sigma -> 13.4%
+    # 1.0 sigma -> 31.7%
     # linear하게 수량 증감 한다 
     # --> 2021.10.15 linear가 아닌 x^2 모델링으로 작은 diff의 경우 수량을 적게 세팅 
     # --> 1) trade수량 줄이기 2) 
@@ -266,21 +268,33 @@ def tradeEmaDynamicRisk(date,
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(1,1,1)
     
-    plt.plot(dfmkt.index, dfmkt['vwap'], linewidth=0.5)
-    plt.plot(dfmkt.index, dfmkt['ema_fast'])
-    plt.plot(dfmkt.index, dfmkt['ema_slow'])
+    ax2 = ax.twinx()
+    ax2.fill_between(dfmkt.index, dfmkt['net_pl'], 0, alpha=0.3, color="gray")
+    
+    ax3 = ax.twinx()
+    ax3.spines["right"].set_position(("axes", 1.1)) ## 오른쪽 옆에 y축 추가
+    ax3.fill_between(dfmkt.index, dfmkt['actual_qty'], 0, alpha=0.1, color="red")
+
+
+    ax.plot(dfmkt.index, dfmkt['vwap'], linewidth=0.5)
+    ax.plot(dfmkt.index, dfmkt['ema_fast'])
+    ax.plot(dfmkt.index, dfmkt['ema_slow'])
+    
+    
+    # ax.set_ylim(108, 109)
     
     # Set plot name as xlabel
     font = {'family': 'verdana',
             'color':  'darkblue',
             'weight': 'bold',
-            'size': 12,
+            'size': 11,
             }
-    plot_name = '{3}, Fast_coef: {0}, Slow_coef: {1}, max qty: {2}'
+    plot_name = '{3}, F_co: {0}, S_co: {1}, maxq: {2}, pl: {4:,}'
     plot_name = plot_name.format(fast_coeff,
                                  slow_coeff,
                                  max_qty,
-                                 date
+                                 date,
+                                 net_pl
                                  )
     ax.set_xlabel(plot_name, fontdict=font)
     plt.show()
@@ -406,18 +420,18 @@ def tradeEmaDynamicRisk_varMaxqty(
     diff_std = np.std(ar_diff_window)
     # print(ar_diff_window.mean(), 2*ar_diff_window.std())
     
-    # 최근 N일의 diff 분포에서 1.5 sigma에 해당하는 diff에 도달하면 max qty가 되도록 수량 설정
-    # 2 sigma로 설정하여 전체 trading time에서 5%의 시간에 max_qty를 보유하는 것으로 설정
+    # 최근 N일의 diff 분포에서 N sigma에 해당하는 diff에 도달하면 max qty가 되도록 수량 설정
+    # 2.0 sigma로 설정하여 전체 trading time에서 4.6%의 빈도로 max_qty를 보유하는 것으로 설정
+    # 1.5 sigma -> 13.4%
+    # 1.0 sigma -> 31.7%
     # linear하게 수량 증감 한다 
-    # --> 2021.10.15 linear가 아닌 x^2 모델링으로 작은 diff의 경우 수량을 적게 세팅 
-    # --> 1) trade수량 줄이기 2) 
-    tick_diff_of_max_qty = 1.5 * diff_std * tick_conversion
+    # --> 2021.10.15 linear가 아닌 x^2 모델링으로 작은 diff의 경우 수량을 적게 세팅하는 옵션 추가
+    tick_diff_of_max_qty = 1.0 * diff_std * tick_conversion
     print(f'tick_diff_of_max_qty : {round(tick_diff_of_max_qty, 3)}')
     
     # 최대 포지션을 잡는 tick_diff를 long short 별도로 저장
     tick_diff_of_max_long_qty = tick_diff_of_max_qty
     abs_tick_diff_of_max_short_qty = tick_diff_of_max_qty
-    
     
     
     # 테스트를 위한 해당일의 시장 data load
@@ -444,6 +458,20 @@ def tradeEmaDynamicRisk_varMaxqty(
     # 시가거래 volume봉 개수, 장 시작후 초기값 세팅 전까지 trade 유보 위해 사용
     siga_time = dfmkt.at[dti[0], 'datetime']
     siga_count = dfmkt[dfmkt['datetime'] == siga_time].shape[0]
+    
+    # pl_status 초기값 지정, 추후 분위기가 좋으면 max 수량을 늘리는 지표로 사용
+    pl_status = "neutral"    
+    
+    # max qty limit 값 저장 : parameter로 주어진 max값은 어떤 경우에도 초과하지 않는다
+    limit_max_long_qty = max_long_qty
+    abs_limit_max_short_qty = abs_max_short_qty
+    
+    # 최초 시작시 맥스를 50%로 제한하고 상황에 따라 변경
+    max_long_qty = 0.5 * limit_max_long_qty
+    abs_max_short_qty = 0.5 * abs_limit_max_short_qty
+    
+    dfmkt.at[dti[0], 'max_long_qty'] = max_long_qty
+    dfmkt.at[dti[0], 'max_short_qty'] = -abs_max_short_qty
     
     """vwap index기준 test loop시작"""
     for dti_pre, dti_now in zip(dti, dti[1:]):
@@ -476,15 +504,23 @@ def tradeEmaDynamicRisk_varMaxqty(
         
         tick_diff_now = tick_conversion * diff_now
         
+        # tick_diff가 max치를 넘으면 리스크한도 조정해주고 tick diff of max도 조정 
         if tick_diff_now > tick_diff_of_max_long_qty:
             # print("tick_diff_of_max_long_qty revised!!!!!!", now)
+            max_long_qty = int(min(limit_max_long_qty, 
+                                   tick_diff_now / tick_diff_of_max_long_qty * max_long_qty
+                                   ))
+            dfmkt.at[dti_now, 'max_long_qty'] = max_long_qty
             tick_diff_of_max_long_qty = tick_diff_now
             
         elif tick_diff_now < -abs_tick_diff_of_max_short_qty:
             # print("tick_diff_of_max_short_qty revised!!!!!!", now)
+            abs_max_short_qty = int(min(abs_limit_max_short_qty,
+                                        abs(tick_diff_now / abs_tick_diff_of_max_short_qty * abs_max_short_qty)
+                                        ))
+            dfmkt.at[dti_now, 'max_short_qty'] = -abs_max_short_qty
             abs_tick_diff_of_max_short_qty = -tick_diff_now
             
-        
         dfmkt.at[dti_now, 'tick_diff'] = tick_diff_now
         
         target_qty = calTargetQty_LS(
@@ -504,6 +540,7 @@ def tradeEmaDynamicRisk_varMaxqty(
         if dfmkt.ema_slow.count() > siga_count:
             
             trade_qty_raw = int(target_qty - dfmkt.at[dti_now, 'actual_qty'])
+            
             if trade_qty_raw >= 0:
                 trade_qty = min(max_trade_qty, trade_qty_raw)
             else:
@@ -511,11 +548,21 @@ def tradeEmaDynamicRisk_varMaxqty(
             
             # last_prc 기준으로 pl 계산, 현재까지의 누적 pl을 기록함
             dftemp = dfmkt[:dti_now+1]
+            dftemp_long = dftemp[dftemp['trade_qty'] > 0]
+            dftemp_short = dftemp[dftemp['trade_qty'] < 0]
             
-            gross_pl = krw_value_1pt \
-                * sum(np.array(dftemp['trade_qty']) \
-                * (last_prc - np.array(dftemp['trade_price'])))
+            # 현재까지 long trade로 
+            gross_pl_long = krw_value_1pt * sum(
+                np.array(dftemp_long['trade_qty']) \
+                    * (last_prc - np.array(dftemp_long['trade_price']))
+                )
+            gross_pl_short = krw_value_1pt * sum(
+                np.array(dftemp_short['trade_qty']) \
+                    * (last_prc - np.array(dftemp_short['trade_price']))
+                )
             
+            gross_pl = gross_pl_long + gross_pl_short
+                        
             commission = krw_commission_per_contract * abs(np.array(dftemp['trade_qty'])).sum()
             net_pl = int(gross_pl - commission)
             dfmkt.at[dti_now, 'net_pl'] = net_pl
@@ -524,8 +571,40 @@ def tradeEmaDynamicRisk_varMaxqty(
             if losscut == "Y" and net_pl < -30*(10**6):
                 break
             
-            # 
-            
+            # 손익상황에 따라 리스크한도 조정 로직
+            # if var_max == "Y":
+            #     # net_pl 천만원이 넘으면 max 수량 증대
+            #     if net_pl > 10*(10**6) and net_pl > dfmkt.at[dti_pre, "net_pl"] and pl_status == "neutral":
+            #         pl_status = "gazua"
+            #         print("gazua")
+            #         if gross_pl_long > gross_pl_short:
+            #             max_long_qty = limit_max_long_qty
+            #         else:
+            #             abs_max_short_qty = abs_limit_max_short_qty
+                
+            #     # net_pl ??백만원 아래이고 gazua상태였으면 원복시킴
+            #     elif net_pl < 5*(10**6) and pl_status == "gazua":
+            #         pl_status = "neutral"
+            #         print("gazua cancel")
+            #         max_long_qty = limit_max_long_qty
+            #         abs_max_short_qty = abs_limit_max_short_qty
+                    
+            #     elif net_pl < -5*(10**6) and pl_status == "neutral":
+            #         pl_status = "sosim"
+            #         print("sosim")
+            #         if gross_pl_long > gross_pl_short:
+            #             max_long_qty = 0.5 * limit_max_long_qty
+            #         else:
+            #             abs_max_short_qty = 0.5 * abs_limit_max_short_qty
+                        
+            #     elif net_pl > 0 and pl_status == "sosim":
+            #         pl_status = "neutral"
+            #         print("sosim cancel")
+            #         max_long_qty = limit_max_long_qty
+            #         abs_max_short_qty = abs_limit_max_short_qty
+                    
+                    
+                
             
     """index기준 test loop종료"""       
     
@@ -560,7 +639,7 @@ def tradeEmaDynamicRisk_varMaxqty(
             'weight': 'bold',
             'size': 12,
             }
-    plot_name = '{3}, Fast_coef: {0}, Slow_coef: {1}, net PL: {2}'
+    plot_name = '{3}, Fast_coef: {0}, Slow_coef: {1}, net PL: {2:,}'
     plot_name = plot_name.format(fast_coeff,
                                  slow_coeff,
                                  net_pl,
@@ -573,7 +652,7 @@ def tradeEmaDynamicRisk_varMaxqty(
 
 #%% TEST PLOT
 
-# day = datetime.date(2021, 6, 23)
+# day = datetime.date(2021, 5, 31)
 
 # # result = tradeEmaDynamicRisk(
 # #         day,
@@ -590,15 +669,15 @@ def tradeEmaDynamicRisk_varMaxqty(
 
 # result = tradeEmaDynamicRisk_varMaxqty(
 #     day,
-#         db_table='lktbf100vol', 
+#         db_table='lktbf50vol', 
 #         plot="Y", 
-#         fast_coeff=0.100, 
-#         slow_coeff=0.015, 
+#         fast_coeff=0.025, 
+#         slow_coeff=0.005, 
 #         tick_cross_margin=0.5,
 #         window_ref=5,
 #         max_long_qty=100,
 #         abs_max_short_qty=100,
-#         max_trade_qty=15,
+#         max_trade_qty=10,
 #         var_max="Y",
 #         method = "linear",
 #         dti_cut = 9999999,

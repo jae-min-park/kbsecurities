@@ -1369,10 +1369,6 @@ def calPlEma(result_ema):
 
 
 
-def calPlEma_wlossCut(result_ema):
-    """daytrader를 가정하고 PL에 따른 손절 실행"""
-    pass
-
 def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
     """시간흐름에 따른 PL 계산
     Parameters
@@ -1387,8 +1383,10 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
     
     #signal table 정리, 첫 signal 이후의 trade는 두배이므로 amt = 2
     sig = r['df']
+    
     sig['amt'] = 2 
-    sig.at[sig.index[0], 'amt'] = 1
+    if not sig.empty:
+        sig.at[sig.index[0], 'amt'] = 1
     
     #오늘 날짜 정의
     date = r['dfmkt']['date'][0]
@@ -1397,7 +1395,7 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
     if asset == 'lktbf':
         asset_time_table = 'lktbf_min'
         asset_multiplier = 100 #한 틱을 PL 1.0으로 표시하기 위함
-        lc = -0.15 #15틱 손절
+        lc = -0.30 #15틱 손절
     elif asset == 'ktbf':
         asset_time_table = 'ktbf_min'
         asset_multiplier = 100 #한 틱을 PL 1.0으로 표시하기 위함
@@ -1415,7 +1413,7 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
     df = df1min.resample(timebin, label='right', closed='right').agg({'close': 'last'})
     
     
-    pl0930 = pl1000 = pl1030 = pl1100 = pl1130 = pl1200 = pl1300 = pl1400 = 99999
+    pl0915 = pl0930 = pl0945 = pl1000 = pl1030 = pl1100 = pl1130 = pl1200 = pl1300 = pl1400 = 99999
     
     for t in df.index:
         #ts: til now signal table
@@ -1428,16 +1426,20 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
         num_trade = ts.amt.sum()
         df.at[t, 'num_trade'] = num_trade
         
-        if t.time() == datetime.time(9,30):
+        if t.time() == datetime.time(9,15):
+            pl0915 = pl
+        elif t.time() ==datetime.time(9,30):
             pl0930 = pl
+        elif t.time() ==datetime.time(9,45):
+            pl0945 = pl
         elif t.time() ==datetime.time(10,00):
             pl1000 = pl
-        # elif t.time() ==datetime.time(10,30):
-        #     pl1030 = pl
+        elif t.time() ==datetime.time(10,30):
+            pl1030 = pl
         elif t.time() ==datetime.time(11,00):
             pl1100 = pl
-        # elif t.time() ==datetime.time(11,30):
-        #     pl1130 = pl
+        elif t.time() ==datetime.time(11,30):
+            pl1130 = pl
         elif t.time() ==datetime.time(12,00):
             pl1200 = pl
         elif t.time() ==datetime.time(13,00):
@@ -1447,7 +1449,9 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
         
         #손절조건검토
         # 시간 조건 같이 검토
-        if losscut == "Y" and pl < lc*asset_multiplier and (pl1000 > pl1100 > pl1300) and t.time() < datetime.time(13,5) :
+        # if losscut == "Y" and pl < lc*asset_multiplier and (pl0915 > pl0930 > pl0945 > pl1000) and t.time() < datetime.time(10,10) :
+        #     break
+        if losscut == "Y" and pl < lc*asset_multiplier:
             break
         #시간 조건 제외
         # if losscut == "Y" and pl < -15 and (pl1000 > pl1100 > pl1130):
@@ -1460,15 +1464,3 @@ def calPlEmaTimely(r, timebin="5min", losscut="N", asset='lktbf'):
         
     return df
 
-def emaBT(ld, vol_option, execution, fast_coeff=0.3, slow_coeff=0.05, margin = 1.5):
-    dfpl = pd.DataFrame(columns=['date', 'pl', 'num_signal'])
-    for i, day in enumerate(ld):
-        result_ema = tradeEma(day, vol_option=vol_option, plot="N", execution=execution, 
-                              fast_coeff=fast_coeff, slow_coeff=slow_coeff, margin = margin)
-        dfpl.at[i, 'date'], dfpl.at[i, 'pl'], dfpl.at[i, 'num_signal'] = calPlEma(result_ema)
-        print(round(dfpl.pl.sum(), 1), round(dfpl.pl.mean(), 2), round(dfpl.pl.std(),2))
-    
-    dfpl.set_index(pd.to_datetime(dfpl.date), inplace=True)
-    # dfpl.resample('Y').sum()
-    
-    return dfpl
