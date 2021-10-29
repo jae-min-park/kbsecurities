@@ -49,15 +49,16 @@ def setDfData(date_start, date_end, table, skip_datetime_col="N") :
     #     df.set_index('datetime', inplace=True)
     return df
 
-def setRtData(asset="lktbf", dtype="vol"):
+def setRtData(asset="lktbf", dtype="vol", vol=100):
     if asset == "lktbf" and dtype == "vol":
         dftick = pd.read_excel("lktbf_rt.xlsx", header=3, usecols="A,B,C,D")
-        dfrt = convertRtTickToVol(dftick, 50)
+        dfrt = convertRtTickToVol(dftick, vol)
     elif asset == "ktbf3y" and dtype == "vol":
         dftick = pd.read_excel("ktbf3y_rt.xlsx", header=3, usecols="A,B,C,D")
-        dfrt = convertRtTickToVol(dftick, 200)
+        dfrt = convertRtTickToVol(dftick, vol)
         
     dfrt['datetime'] = pd.to_datetime(dfrt.date.astype(str) + ' ' + dfrt.time.astype(str))
+    dfrt['close'] = dfrt['price']
         
     return dfrt
 

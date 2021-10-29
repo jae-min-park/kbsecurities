@@ -39,13 +39,13 @@ for i, day in enumerate(ld):
     
     result = edr.tradeEmaDynamicRisk(
         day,
-        db_table='ktbf300vol',
-        fast_coeff=0.20, 
-        slow_coeff=0.03, 
-        tick_cross_margin=0.5,
+        db_table='ktbf200vol',
+        fast_coeff=0.15, 
+        slow_coeff=0.02, 
+        tick_cross_margin=1.0,
         window_ref=5,
         max_qty=500,
-        max_trade_qty=80,
+        max_trade_qty=60,
         method = "linear",
         losscut = "Y"
         )

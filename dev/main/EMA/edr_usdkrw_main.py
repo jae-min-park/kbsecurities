@@ -16,9 +16,9 @@ import emaDynaRisk as edr
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
 # ld = [d for d in ld if d.year >= 2016 and d.year < 2019]
-# ld = [d for d in ld if d.year >= 2019 ]
+# ld = [d for d in ld if d.year == 2021 and d.month ==10]
 # ld = [d for d in ld if d == datetime.date(2021, 9, 28) or d == datetime.date(2021, 9, 29) or d == datetime.date(2021, 10, 13)]
-ld = [d for d in ld if d == datetime.date(2021, 10, 26)]
+ld = [d for d in ld if d == datetime.date(2021, 10, 28)]
 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])

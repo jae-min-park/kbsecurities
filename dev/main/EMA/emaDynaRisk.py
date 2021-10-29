@@ -17,19 +17,22 @@ sys.path.append('D:\\dev\\kbsecurities\\dev\\utils')
 import util
 
 def calTargetQty(
-        max_qty, 
+        max_qty,
+        abs_max_short_qty,
         tick_diff_now,
         tick_cross_margin, 
         tick_diff_of_max_qty, 
         method="linear"
         ):
     
-    # # linear 증감을 위한 1차함수 계수
+    # linear 증감을 위한 1차함수 계수
     # qty_per_tick_diff_overmargin = max_qty / (tick_diff_of_max_qty - tick_cross_margin)
     
+    # cross_margin 이내의 경우
     if abs(tick_diff_now) <= tick_cross_margin:
         target_qty = 0
-        
+    
+    # 롱 시그널
     elif tick_diff_now > tick_cross_margin:
         if method == "linear":
             target_qty_raw = max_qty * tick_diff_now / tick_diff_of_max_qty
@@ -39,15 +42,16 @@ def calTargetQty(
             target_qty = target_qty_raw if target_qty_raw < max_qty else max_qty
         else:
             ValueError("Wrong method")
-        
+    
+    # 숏 시그널
     elif tick_diff_now < -tick_cross_margin:
         if method == "linear":
-            target_qty_raw = max_qty * tick_diff_now / tick_diff_of_max_qty
-            target_qty = target_qty_raw if -target_qty_raw < max_qty else -max_qty
+            target_qty_raw = abs_max_short_qty * tick_diff_now / tick_diff_of_max_qty
+            target_qty = target_qty_raw if -target_qty_raw < abs_max_short_qty else -abs_max_short_qty
         elif method == "power":
             # 제곱하니까 - 부호 붙여줌
-            target_qty_raw = -max_qty * (tick_diff_now / tick_diff_of_max_qty)**2
-            target_qty = target_qty_raw if -target_qty_raw < max_qty else -max_qty
+            target_qty_raw = -abs_max_short_qty * (tick_diff_now / tick_diff_of_max_qty)**2
+            target_qty = target_qty_raw if -target_qty_raw < abs_max_short_qty else -abs_max_short_qty
         else:
             ValueError("Wrong method")
         
@@ -58,17 +62,21 @@ def calTargetQty(
 
 
 def tradeEmaDynamicRisk(date, 
+                        yesterday = None,
                         db_table='lktbf50vol', 
+                        dfmkt = None,
                         plot="N", 
                         fast_coeff=0.20, 
                         slow_coeff=0.05, 
                         tick_cross_margin=0.5,
                         window_ref=5,
                         max_qty=200,
+                        abs_max_short_qty=None,
                         max_trade_qty=5,
                         method = "power",
                         dti_cut = 9999999,
-                        losscut="Y"
+                        losscut="Y",
+                        trading_time_start=None,
                         ):
     """
     tradeEma는 장중 한방향 트렌드가 지속될 때 많은 수익을 추구
@@ -124,7 +132,10 @@ def tradeEmaDynamicRisk(date,
     ar_diff_window = np.array([])
     
     for i in range(1, window_ref+1):
-        d = util.date_offset(date, -i)
+        if yesterday != None:
+            d = yesterday
+        else:
+            d = util.date_offset(date, -i)
         # print(i, d)
         refmkt = util.setDfData(d, d, db_table)
         refdti = refmkt.index
@@ -159,9 +170,13 @@ def tradeEmaDynamicRisk(date,
     tick_diff_of_max_qty = 1.5 * diff_std * tick_conversion
     print(f'tick_diff_of_max_qty : {round(tick_diff_of_max_qty, 3)}')
     
+    # max_short_qty 설정
+    if abs_max_short_qty == None:
+        abs_max_short_qty = max_qty
     
     # 테스트를 위한 해당일의 시장 data load
-    dfmkt = util.setDfData(date, date, db_table)
+    if dfmkt is None or dfmkt.empty == True:
+        dfmkt = util.setDfData(date, date, db_table)
     # dfmkt = dfmkt[:200]
     
     dfmkt = dfmkt[:dti_cut]
@@ -194,6 +209,12 @@ def tradeEmaDynamicRisk(date,
         # 현재시간
         now = dfmkt.at[dti_now, 'datetime'].time()
         
+        # trading_time_start 조건이 있을 경우 trade_qty 강제로 reset
+        # AF같은 타 전략에서 edr 조건 차용시 사용할 수 있음
+        if trading_time_start != None:
+            if now < trading_time_start:
+                trade_qty = 0
+        
         # dti_pre에서 trade 요청 발생한 경우 dti_now에서 실행
         if trade_qty != 0:
         # if dfmkt.loc[dti_pre]['trade_price'] == 'TBD':
@@ -223,7 +244,8 @@ def tradeEmaDynamicRisk(date,
         dfmkt.at[dti_now, 'tick_diff'] = tick_diff_now
         
         target_qty = calTargetQty(
-            max_qty, 
+            max_qty,
+            abs_max_short_qty,
             tick_diff_now, 
             tick_cross_margin, 
             tick_diff_of_max_qty, 
@@ -233,8 +255,8 @@ def tradeEmaDynamicRisk(date,
         dfmkt.at[dti_now, 'target_qty'] = target_qty
         
         # slow ema 형성시까지(=slow ema가 적정수량이 생길때까지) trade하지 않음
-        # if dfmkt.ema_slow.count() > siga_count + (1 / slow_coeff):
-        if dfmkt.ema_slow.count() > siga_count:
+        if dfmkt.ema_slow.count() > siga_count + (1 / slow_coeff)/2:
+        # if dfmkt.ema_slow.count() > siga_count:
             
             trade_qty_raw = int(target_qty - dfmkt.at[dti_now, 'actual_qty'])
             if trade_qty_raw >= 0:
@@ -270,12 +292,17 @@ def tradeEmaDynamicRisk(date,
     
     ax2 = ax.twinx()
     ax2.fill_between(dfmkt.index, dfmkt['net_pl'], 0, alpha=0.3, color="gray")
+    ax2.scatter(dfmkt.index[-1], 
+                dfmkt['net_pl'].iloc[-1],
+                color="tab:red" if dfmkt['net_pl'].iloc[-1] > 0 else "b", 
+                marker="o", s=50)
     
     ax3 = ax.twinx()
     ax3.spines["right"].set_position(("axes", 1.1)) ## 오른쪽 옆에 y축 추가
     ax3.fill_between(dfmkt.index, dfmkt['actual_qty'], 0, alpha=0.1, color="red")
-
-
+    
+    
+    
     ax.plot(dfmkt.index, dfmkt['vwap'], linewidth=0.5)
     ax.plot(dfmkt.index, dfmkt['ema_fast'])
     ax.plot(dfmkt.index, dfmkt['ema_slow'])
