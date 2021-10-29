@@ -270,6 +270,9 @@ def tradeEmaDynamicRisk(date,
             commission = krw_commission_per_contract * abs(np.array(dftemp['trade_qty'])).sum()
             net_pl = int(gross_pl - commission)
             dfmkt.at[dti_now, 'net_pl'] = net_pl
+            
+            # qty_to_trade 컬럼 추가
+            dfmkt.at[dti_now, 'qty_to_trade'] = trade_qty
         
             # 절대금액 손절 로직 추가
             if losscut == "Y" and net_pl < -30*(10**6):
