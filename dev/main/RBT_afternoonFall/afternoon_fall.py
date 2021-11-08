@@ -269,7 +269,7 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
     if time_break < trading_begins_before and (uno.is_losscut_traded or uno.is_pt_traded):
         
         # 2nd trade 진입가격
-        dos_entry = uno.max_gain_price            
+        dos_entry = uno.max_gain_price 
         
         for dti_pre, dti_now in zip(dti[dti_break:], dti[dti_break+1:]):
             # 현재시간
@@ -280,13 +280,18 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
             close_price = dfmkt.loc[dti_now,'close']
             
             # ema 기록
-            dfmkt.at[dti_now, 'ema_fast'] = fast_coeff * vwap + (1-fast_coeff) * dfmkt.at[dti_pre, 'ema_fast']
-            dfmkt.at[dti_now, 'ema_slow'] = slow_coeff * vwap + (1-slow_coeff) * dfmkt.at[dti_pre, 'ema_slow']
+            dfmkt.at[dti_now, 'ema_fast'] = fast_coeff * vwap + \
+                (1-fast_coeff) * dfmkt.at[dti_pre, 'ema_fast']
+            
+            dfmkt.at[dti_now, 'ema_slow'] = slow_coeff * vwap + \
+                (1-slow_coeff) * dfmkt.at[dti_pre, 'ema_slow']
             
             # cross test 결과 
-            tested_status = tl.crossTest(dfmkt.at[dti_now, 'ema_fast'], 
-                                          dfmkt.at[dti_now, 'ema_slow'], 
-                                          margin=ema_margin)
+            tested_status = tl.crossTest(
+                dfmkt.at[dti_now, 'ema_fast'], 
+                dfmkt.at[dti_now, 'ema_slow'], 
+                margin=ema_margin
+                )
             
             # 트리거는 됐는데, 매매는 실행전 --> 진입실행
             if dos.is_triggered and not dos.is_traded:
@@ -298,6 +303,24 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
                 dos.max_gain = 0
                 dos.max_gain_time = now
                 dos.max_gain_local_index = dti_now
+                
+            # losscut 발동, losscut 실행전 --> losscut실행
+            elif dos.is_losscut_triggered and not dos.is_losscut_traded:
+                dos.losscut_price = vwap
+                dos.losscut_time = now
+                dos.losscut_local_index = dti_now
+                dos.is_losscut_traded = True
+                dos.updatePl(vwap)
+                break
+            
+            # profit-taking 발동, pt실행전 --> pt 실행
+            elif dos.is_pt_triggered and not dos.is_pt_traded:
+                dos.pt_price = vwap
+                dos.pt_time = now
+                dos.pt_local_index = dti_now
+                dos.is_pt_traded = True
+                dos.updatePl(vwap)
+                break
             
             # 트리거 & 실행 후
             elif dos.is_triggered and dos.is_traded:
@@ -305,15 +328,44 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
                 dos.updatePl(vwap)
                 # print(dos.pl)
                 
+                # max gain 기록
+                if dos.pl > dos.max_gain:
+                    dos.max_gain = dos.pl
+                    dos.max_gain_price = close_price
+                    dos.max_gain_time = now
+                    dos.max_gain_local_index = dti_now
                 
+                # draw down 기록, max_gain 0 인 경우 예외처리
+                if dos.max_gain !=0:
+                    dos.draw_down = 1 - dos.pl / dos.max_gain 
+                else: 
+                    dos.draw_down = 0
+            
+                # 손절 로직 : uno의 lc의 50%만큼 손실나면
+                bool_lc_pl_dos = dos.pl < 0.5 * af_config['lc_pl'] #틱환산 했으므로 product_multiplier 적용안함
+                if bool_lc_pl_dos:
+                    dos.is_losscut_triggered = True
+                    
+                # 익절 로직1 : max_gain이 ??틱 이상 --> uno의 50%
+                # 익절 로직2 : draw_down %% 이상 발생 --> uno 비율의 1.5배
+                bool_pt_pl_dos = dos.max_gain > 0.5 * af_config['pt_pl'] # (틱)
+                bool_draw_down_dos = dos.draw_down > 1.5 * af_config['pt_draw_down']
+                # 1 and 2 만족시 익절
+                if bool_pt_pl_dos and bool_draw_down_dos:
+                    dos.is_pt_triggered = True
                 
             # 매매 조건 탐색
             if vwap < dos_entry and tested_status == "below":
                 dos.is_triggered = True
+                
+            # 종가청산 기록
+            if now == trading_hour_ends:
+                dos.is_timely_closed = True
+                break
     
                 
-    if dos.is_traded:
-        uno.pl = uno.pl + dos.pl
+    # if dos.is_traded:
+    #     uno.pl = uno.pl + dos.pl
     
     
     # test loop break 이후에 trading time zone endline 설정, Plotting용
@@ -344,9 +396,18 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
         if dos.is_traded:
             ax.scatter(dos.trade_local_index,
                        dos.trade_price,
-                       color="b", marker="v", s=300)
+                       color="b", marker="v", s=200)
             
+        if dos.is_losscut_traded:
+            ax.scatter(dos.losscut_local_index,
+                       dos.losscut_price,
+                       color="tab:red", marker="^", s=200)
         
+        if dos.is_pt_traded:
+            ax.scatter(dos.pt_local_index,
+                       dos.pt_price,
+                       color="tab:red", marker="^", s=200)
+            
         plt.plot(dti, dfmkt['vwap'])
         plt.plot(dti, dfmkt['ema_fast'])
         plt.plot(dti, dfmkt['ema_slow'])
@@ -355,7 +416,6 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
         plt.axvline(x=trading_begins_after_index)
         plt.axvline(x=trading_begins_before_index)
 
-        
         # 장중 저가 H-line
         plt.axhline(y=intra_lo, color='r', linestyle='dashed')
         
@@ -370,10 +430,11 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
         font = {'family': 'verdana',
                 'color':  'darkblue',
                 'weight': 'bold',
-                'size': 16}
+                'size': 14}
         
-        #!!! ploting용 pl 재정의 필요,,, 근본적으로 uno dos pl 합산 필요
-        plot_name = str(date)+ ' |   P&L : ' + str(uno.pl)
+        pl = uno.pl + dos.pl if dos.is_traded else uno.pl
+        
+        plot_name = str(date)+ ' |   P&L : ' + str(round(pl, 1))
         ax.set_xlabel(plot_name, fontdict=font)
         plt.show()
     """
@@ -388,9 +449,9 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
 
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
-# ld = [d for d in ld if d.year == 2017]
-ld = [d for d in ld if d.year == 2021 and d.month >= 9]
-# ld = [d for d in ld if d > datetime.date(2021, 9, 24)]
+# ld = [d for d in ld if d.year in [2015, 2016, ]]
+# ld = [d for d in ld if d.year >= 2019 ]
+ld = [d for d in ld if d == datetime.date(2021, 11, 8)]
 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
@@ -398,17 +459,29 @@ dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
 # ld = list(pd.read_excel("AF_loss_days.xlsx").date)
 
 #장중저가 하향돌파 margin(틱), +2 --> 장중저가보다 2틱 아래를 돌파로 가정
-af_config = {'trading_begins_after': datetime.time(12,15,0),
-             'trading_begins_before': datetime.time(15,15,0),
+af_config = {'trading_begins_after': datetime.time(12,00,0),
+             'trading_begins_before': datetime.time(15,00,0),
              'ema_fast_coeff': 0.20,
              'ema_slow_coeff': 0.05,
              'thru': 0.5,
              'ema_margin': 0.5,
              'lc_hi-lo': 1.0, 
-             'lc_pl': -20, 
-             'pt_pl': 20,
+             'lc_pl': -25, 
+             'pt_pl': 25,
              'pt_draw_down': 0.3
              }
+
+# af_config_3y = {'trading_begins_after': datetime.time(12,00,0),
+#              'trading_begins_before': datetime.time(15,00,0),
+#              'ema_fast_coeff': 0.20,
+#              'ema_slow_coeff': 0.05,
+#              'thru': 0.5,
+#              'ema_margin': 0.5,
+#              'lc_hi-lo': 1.0, 
+#              'lc_pl': -7, 
+#              'pt_pl': 7,
+#              'pt_draw_down': 0.3
+#              }
 
 
 for i, day in enumerate(ld):
@@ -416,11 +489,11 @@ for i, day in enumerate(ld):
         day = day.date()
     
     uno, dos = afternoonFall(day, af_config=af_config, db_table='lktbf100vol', plot="Y")
-    # uno = afternoonFall(day, af_config=af_config, db_table='lktbf100vol', plot="Y")
+    # uno, dos = afternoonFall(day, af_config=af_config_3y, db_table='ktbf200vol', plot="Y")
     
     dfpl.at[i, 'date'] = day
     
-    pl_of_the_day = uno.pl
+    pl_of_the_day = uno.pl + dos.pl if dos.is_traded else uno.pl
     dfpl.at[i, 'pl'] = pl_of_the_day
     dfpl.at[i, 'dos_pl'] = dos.pl
     
