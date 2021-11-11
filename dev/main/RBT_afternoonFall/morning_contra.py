@@ -53,13 +53,12 @@ bangla = {'is_triggered': False,
    
 """
 
-
-
-date = datetime.date(2021, 9, 16)
-db_table = 'lktbf_min'
+date = datetime.date(2021, 9, 6)
+db_table = 'lktbf_10sec'
 
 config = {
     'trading_ends_at': datetime.time(11,30,0),
+    'position_build_until': datetime.time(9,30,0),
     'ema_fast_coeff': 0.20,
     'ema_slow_coeff': 0.05,
     'thru': 0.5,
@@ -105,7 +104,7 @@ EMA_MARGIN = config['ema_margin']
 
  # trading time zone 설정
 trading_ends_at = config['trading_ends_at']
-trading_begins_before_index = None
+position_build_until = config['position_build_until']
 
 #local index
 dti = dfmkt.index
@@ -113,6 +112,10 @@ dti = dfmkt.index
 #초기세팅
 dfmkt.at[dti[0], 'ema_fast'] = dfmkt.at[dti[0], 'open']
 dfmkt.at[dti[0], 'ema_slow'] = dfmkt.at[dti[0], 'open']
+dfmkt.at[dti[0], 'tick_apo'] = 0
+dfmkt.at[dti[0], 'trade_price'] = 0
+dfmkt.at[dti[0], 'trade_qty'] = 0
+dfmkt.at[dti[0], 'actual_qty'] = 0
 
 max_gain = -10**10
 max_loss = 10**10
@@ -128,8 +131,9 @@ last_trade_price = 0
 QTY_PER_TRADE = 50
 MAX_QTY = 200
 
-#초기상태에 대한 정의 필요
 prev_status = "attached"
+
+last_move = "standby"
 
 #현재의 signal 상태를 저장
 signal_before = 0
@@ -147,6 +151,56 @@ intra_hi_time_list = []
 LOSSCUT_KRW = -10**7 # -천만원
 MIN_KRW_PROFIT_TO_CLOSE = 10**7 # 천만원
 MIN_PRICE_MOVE_FROM_LAST_TRADE = 0.03 # 3틱 이상 바뀌었을때만 add
+#%% look back period 및 트레이딩을 위한 설정값들 정의
+    
+    # ar_diff_window = np.array([])
+    # refmkt_list = []
+    # apo_std_list = []
+    
+    # for i in range(1, window_ref+1):
+    #     if yesterday != None:
+    #         d = yesterday
+    #     else:
+    #         d = util.date_offset(date, -i)
+    #     # print(i, d)
+    #     refmkt = util.setDfData(d, d, db_table)
+    #     refdti = refmkt.index
+        
+    #     refmkt.at[refdti[0], 'ema_fast'] = refmkt.at[refdti[0], 'vwap']
+    #     refmkt.at[refdti[0], 'ema_slow'] = refmkt.at[refdti[0], 'vwap']
+        
+    #     for refdti_pre, refdti_now in zip(refdti, refdti[1:]):
+    #         last_prc = refmkt.loc[refdti_now,'close']
+            
+    #         refmkt.at[refdti_now, 'ema_fast'] = K_FAST * last_prc \
+    #             + (1 - K_FAST) * refmkt.at[refdti_pre, 'ema_fast']
+            
+    #         refmkt.at[refdti_now, 'ema_slow'] = K_SLOW * last_prc \
+    #             + (1 - K_SLOW) * refmkt.at[refdti_pre, 'ema_slow']
+        
+    #     ar_diff_day = np.array(refmkt['ema_fast']) - np.array(refmkt['ema_slow'])
+        
+    #     print(f'{d}  {ar_diff_day.mean()*100:.1f}  {ar_diff_day.std()*100:.1f}  {refmkt.close.std()*100:.1f}')
+        
+    #     refmkt['cum_std'] = refmkt['close'].expanding(2).std()
+        
+    #     apo_std_list.append(np.std(ar_diff_day))
+        
+    #     refmkt_list.append(refmkt)
+    
+    # # look back window의 시간대별 평균 변동성(cum std) 기록, 분단위
+    # timely_std_list = []
+    
+    # for ti in pd.timedelta_range(start='9:00:00', end='15:45:00', freq='1min', closed='right'):
+    #     # print(ti)
+    #     std_til_ti = []
+    #     for refmkt in refmkt_list:
+    #         if refmkt['time'].iloc[0] == pd.Timedelta(hours=9):
+    #             std_til_ti.append(refmkt[refmkt['time'] <= ti]['cum_std'].iloc[-1])
+    #         else:
+    #             pass
+    #     timely_std_list.append(np.mean(std_til_ti))
+
 
 #%% TEST LOOP
 
@@ -167,8 +221,9 @@ if siga_chg < -0.10:
         
         # 종료시간 내에 현재 포지션 청산
         # 롱 or 숏 똑같이 처리
-        if (now >= trading_ends_at) \
-            or (open_pnl_krw > MIN_KRW_PROFIT_TO_CLOSE and draw_down > DRAWDOWN_TO_CLOSE):
+        if (open_position_qty != 0) \
+            and ((now >= trading_ends_at) \
+                 or (max_gain > MIN_KRW_PROFIT_TO_CLOSE and draw_down > DRAWDOWN_TO_CLOSE)):
                 
             trade_qty = -open_position_qty
             trade_price = last_prc - TICK_VALUE * 0.5 if open_position_qty > 0 else last_prc + TICK_VALUE * 0.5
@@ -176,6 +231,10 @@ if siga_chg < -0.10:
             open_position_trade_price_list = []
             open_position_trade_qty_list = []
             last_trade_price = trade_price
+            last_move = "position_closed"
+            print(now, last_move)
+            
+            # break
         
         
         # 장 시작후 몇분이 경과했는지
@@ -213,189 +272,131 @@ if siga_chg < -0.10:
             intra_hi_list.append(last_prc)
             intra_hi_time_list.append(now)
             
-        # 트레이딩 시간 정의
-        if  now < trading_ends_at:
+        tested_status = tl.crossTest(dfmkt.at[dti_now, 'ema_fast'], 
+                                     dfmkt.at[dti_now, 'ema_slow'], 
+                                     margin=EMA_MARGIN)
+        
+        # 기본수량 매수하고 시작
+        if dti_now == dti[1]:
+            trade_qty = QTY_PER_TRADE
+            trade_price = siga + TICK_VALUE * 0.5 # dti_pre가 시가 indexing하므로 siga로 강제지정
+            open_position_qty += trade_qty
+            # 시가매수이므로 최초 dti 입력
+            dfmkt.at[dti_pre, 'trade_price'] = trade_price
+            dfmkt.at[dti_pre, 'trade_qty'] = trade_qty
+            dfmkt.at[dti_pre, 'actual_qty'] = trade_qty + dfmkt.at[dti_pre, 'actual_qty']
+            open_position_trade_price_list.append(trade_price)
+            open_position_trade_qty_list.append(trade_qty)
+            last_trade_price = trade_price
+            last_move = "initial_long_entered"
+            print(now, last_move)
+        
+        # open position pl 계산
+        if open_position_qty != 0:
+            open_pnl_krw = KRW_VALUE_1PT * sum(
+                np.array(open_position_trade_qty_list) \
+                    * (last_prc - np.array(open_position_trade_price_list))
+                    )
             
-            tested_status = tl.crossTest(dfmkt.at[dti_now, 'ema_fast'], 
-                                         dfmkt.at[dti_now, 'ema_slow'], 
-                                         margin=EMA_MARGIN)
+            if max_gain < open_pnl_krw :
+                max_gain = open_pnl_krw 
             
-            # 기본수량 매수하고 시작
-            if dti_now == dti[1]:
+            if max_gain > 0:
+                draw_down = 1 - open_pnl_krw / max_gain
+        
+        # 방향성 탐색 & 포지션 쌓기
+        if now < position_build_until:
+            
+            # 롱 add하는 경우
+            if (open_position_qty > 0) \
+                and (open_position_qty < MAX_QTY) \
+                and (last_prc - last_trade_price < -MIN_PRICE_MOVE_FROM_LAST_TRADE) \
+                and (open_pnl_krw > LOSSCUT_KRW) \
+                and (last_prc > siga - 0.05):
+                    
                 trade_qty = QTY_PER_TRADE
                 trade_price = last_prc + TICK_VALUE * 0.5
                 open_position_qty += trade_qty
                 open_position_trade_price_list.append(trade_price)
                 open_position_trade_qty_list.append(trade_qty)
                 last_trade_price = trade_price
+                last_move = "long_added"
+                print(now, last_move)
             
-            # open position pl 계산
-            if open_position_qty != 0:
-                open_pnl_krw = KRW_VALUE_1PT * sum(
-                    np.array(open_position_trade_qty_list) \
-                        * (last_prc - np.array(open_position_trade_price_list))
-                        )
-                
-                if max_gain < open_pnl_krw :
-                    max_gain = open_pnl_krw 
-                
-                if max_gain > 0:
-                    draw_down = 1 - open_pnl_krw / max_gain
-            
-            # 방향성 탐색 시간 (9:30 이전) - 포지션 쌓기
-            elif now < dfmkt.loc[dti[29]]['datetime'].time():
-                
-                # 롱 add하는 경우
-                if (open_position_qty > 0) \
-                    and (open_position_qty < MAX_QTY) \
-                    and (last_prc - last_trade_price < -MIN_PRICE_MOVE_FROM_LAST_TRADE) \
-                    and (open_pnl_krw > LOSSCUT_KRW):
-                        
-                    trade_qty = QTY_PER_TRADE
-                    trade_price = last_prc + TICK_VALUE * 0.5
-                    open_position_qty += trade_qty
-                    open_position_trade_price_list.append(trade_price)
-                    open_position_trade_qty_list.append(trade_qty)
-                    last_trade_price = trade_price
-                
-                # 롱 손절하고 숏 전환
-                elif (open_position_qty > 0) \
-                    and (last_prc <= intra_lo) \
-                    and (open_pnl_krw <= LOSSCUT_KRW)
-                        
-                # 숏 애드
-                
-                        
-            
-                
-            
-            
-            # last_prc 기준으로 pl 계산, 현재까지의 누적 pl을 기록함
-            dftemp = dfmkt[:dti_now+1]
-            gross_pl = KRW_VALUE_1PT * sum(np.array(dftemp['trade_qty']) \
-                                           * (last_prc - np.array(dftemp['trade_price'])))
-            commission = KRW_COMMISSION_PER_CONTRACT * abs(np.array(dftemp['trade_qty'])).sum()
-            net_pl = int(gross_pl - commission)
-            dfmkt.at[dti_now, 'net_pl'] = net_pl
-            
-            
-                
-            
-            # open_position_qty 를 기준으로 조건 탐색
-            
-            # 현재 포지션 없음
-            if open_position_qty == 0:
-                # 진입 test
-                # threshold 조건 & apo가 이전가격대비 반대방향으로 진행 (꺾이는 경우)
-                # & last_trade_price 대비 충분히 움직임
-                if (tick_apo > ENTRY_THRESHOLD_APO * std_factor) \
-                    and (tick_apo < dfmkt.loc[dti_pre, 'tick_apo']) \
-                    and (abs(last_prc - last_trade_price) \
-                         > MIN_PRICE_MOVE_FROM_LAST_TRADE * std_factor):
-                    trade_qty = -QTY_PER_TRADE
-                    print("SHORT to be initiated")
-                
-                elif tick_apo < -ENTRY_THRESHOLD_APO * std_factor \
-                    and (tick_apo > dfmkt.loc[dti_pre, 'tick_apo']) \
-                    and (abs(last_prc - last_trade_price) \
-                         > MIN_PRICE_MOVE_FROM_LAST_TRADE * std_factor):
-                    trade_qty = QTY_PER_TRADE
-                    print("LONG to be initiated")
-            
-            # 현재 숏포지션
-            elif open_position_qty < 0:
-                # 포지션 익절
-                if open_pnl_krw > MIN_KRW_PROFIT_TO_CLOSE / std_factor:
-                    trade_qty = abs(open_position_qty) # 숏이었으므로 양수의 수량
-                    print("SHORT profit to be taken.", f'{open_pnl_krw:,}')
-                    
-                # 포지션 손절
-                elif open_pnl_krw < LOSSCUT_KRW / std_factor:
-                    trade_qty = abs(open_position_qty) # 숏이었으므로 양수의 수량
-                    print("SHORT Loss to be realized")
-                    
-                # 손익으로는 청산 조건에 해당 없으므로 포지션 추가 또는 apo 기준 청산 또는 nothing
-                else:
-                    # apo조건 청산
-                    if tick_apo <= 0:
-                        trade_qty = abs(open_position_qty) # 숏이었으므로 양수의 수량
-                        print("Quit SHORT by apo condition")
-                    
-                    # add 조건 만족하면 포지션 add
-                    # entry조건 만족 & max 수량 이내 & 마지막거래대비 충분히 움직임 & APO 꺾임
-                    elif (tick_apo > ENTRY_THRESHOLD_APO * std_factor) \
-                        and (abs(open_position_qty) < MAX_QTY) \
-                        and (abs(last_prc - open_position_trade_price_list[-1]) \
-                             > MIN_PRICE_MOVE_FROM_LAST_TRADE * std_factor) \
-                        and (tick_apo < dfmkt.loc[dti_pre, 'tick_apo']): 
-                        trade_qty = -QTY_PER_TRADE
-                        print("SHORT Position to be added")
-            
-            # 현재 롱포지션
-            elif open_position_qty > 0:
-                # 포지션 익절
-                if open_pnl_krw > MIN_KRW_PROFIT_TO_CLOSE / std_factor:
-                    trade_qty = -abs(open_position_qty)
-                    print("LONG profit to be taken")
-                    
-                # 포지션 손절
-                elif open_pnl_krw < LOSSCUT_KRW / std_factor:
-                    trade_qty = -abs(open_position_qty) 
-                    print("LONG Loss to be realized")
-                    
-                # 손익으로는 청산 조건에 해당 없으므로 포지션 추가 또는 apo 기준 청산 또는 nothing
-                else:
-                    # apo조건 청산
-                    if tick_apo >= 0:
-                        trade_qty = -abs(open_position_qty) 
-                        print("Quit LONG by apo condition")
-                    
-                    # add 조건 만족하면 포지션 add
-                    # entry조건 만족 & max 수량 이내 & 마지막거래대비 충분히 움직임 & APO 꺾임
-                    elif (tick_apo < -ENTRY_THRESHOLD_APO * std_factor) \
-                        and (abs(open_position_qty) < MAX_QTY) \
-                        and (abs(last_prc - open_position_trade_price_list[-1]) \
-                             > MIN_PRICE_MOVE_FROM_LAST_TRADE * std_factor) \
-                        and (tick_apo > dfmkt.loc[dti_pre, 'tick_apo']):
-                        trade_qty = QTY_PER_TRADE
-                        print("LONG Position to be added")
-            
-            # qty_to_trade 컬럼 추가
-            dfmkt.at[dti_now, 'qty_to_trade'] = trade_qty    
-        
-        
-        if trade_qty != 0:
-            dfmkt.at[dti_now, 'trade_price'] = vwap
-            last_trade_price = vwap
-            
-            # open position data들 정리
-            open_position_trade_price_list.append(vwap)
-            open_position_trade_qty_list.append(trade_qty)
-            open_position_qty += trade_qty
-            print(f' {dti_now} {now.time()}   {trade_qty} Traded @ {vwap}')
-            print(f' {open_position_trade_qty_list}')
-            print(f' {open_position_trade_price_list}')
-            
-            # 상기 trade로 포지션 flat이 된 경우 data 초기화
-            if open_position_qty == 0:
+            # 롱 손절, 로스컷 손익 이하일때
+            elif (open_position_qty > 0) and (open_pnl_krw <= LOSSCUT_KRW):
+                trade_qty = -open_position_qty
+                trade_price = last_prc - TICK_VALUE * 0.5
+                open_position_qty = 0
                 open_position_trade_price_list = []
                 open_position_trade_qty_list = []
+                last_trade_price = trade_price
+                last_move = "long_losscut"
+                print(now, last_move)
             
-        else:
-            dfmkt.at[dti_now, 'trade_price'] = 0
+            # 숏 진입, 장중 저가 깨졌을 때
+            elif  last_move == "long_losscut" and last_prc <= intra_lo:
+                trade_qty = -QTY_PER_TRADE
+                trade_price = last_prc - TICK_VALUE * 0.5
+                open_position_qty += trade_qty
+                open_position_trade_price_list.append(trade_price)
+                open_position_trade_qty_list.append(trade_qty)
+                last_trade_price = trade_price
+                last_move = "short_entered"
+                print(now, last_move)
+                    
+            # 숏 애드, 숏포지션이고 tick apo가 직전보다 심화될 때
+            elif (open_position_qty < 0) \
+                and (abs(open_position_qty) < MAX_QTY) \
+                and (last_prc - last_trade_price < -MIN_PRICE_MOVE_FROM_LAST_TRADE) \
+                and (open_pnl_krw > LOSSCUT_KRW) \
+                and (tick_apo < dfmkt.loc[dti_pre]['tick_apo']): # 숏 강도가 심화
+                
+                trade_qty = -QTY_PER_TRADE
+                trade_price = last_prc - TICK_VALUE * 0.5
+                open_position_qty += trade_qty
+                open_position_trade_price_list.append(trade_price)
+                open_position_trade_qty_list.append(trade_qty)
+                last_trade_price = trade_price
+                last_move = "short_added"
+                print(last_move)
             
+            else:
+                trade_qty = 0
+                trade_price = 0
+        
+        # if dti_now != dti[1]:
+        dfmkt.at[dti_now, 'trade_price'] = trade_price
         dfmkt.at[dti_now, 'trade_qty'] = trade_qty
         dfmkt.at[dti_now, 'actual_qty'] = trade_qty + dfmkt.at[dti_pre, 'actual_qty']
-        
-        # reset
+            
         trade_qty = 0
-        
+        trade_price = 0
+            
+        # last_prc 기준으로 pl 계산, 현재까지의 누적 pl을 기록함
+        dftemp = dfmkt[:dti_now]
+        gross_pl = KRW_VALUE_1PT * sum(np.array(dftemp['trade_qty']) \
+                                       * (last_prc - np.array(dftemp['trade_price'])))
+        commission = KRW_COMMISSION_PER_CONTRACT * abs(np.array(dftemp['trade_qty'])).sum()
+        net_pl = int(gross_pl - commission)
+        dfmkt.at[dti_now, 'net_pl'] = net_pl
+            
+            
+            
+            # # open position data들 print
+            # print(f' {open_position_trade_qty_list}')
+            # print(f' {open_position_trade_price_list}')
+            
+            # # 상기 trade로 포지션 flat이 된 경우 data 초기화
+            # if open_position_qty == 0:
+            #     open_position_trade_price_list = []
+            #     open_position_trade_qty_list = []
+            
         
         
             # 절대금액 손절 로직 추가
             # if losscut == "Y" and net_pl < -30*(10**6):
             #     break
-            
             
     """index기준 test loop종료"""       
             
@@ -403,6 +404,62 @@ if siga_chg < -0.10:
     print(f'net_pl : {net_pl:,}')
     print(f'trade qty sum : {int(dfmkt.trade_qty.abs().sum()):,}')
     print(f'commission sum : {int(commission):,}')
+    
+#%%PLOT
+
+fig = plt.figure(figsize=(10,10))
+    
+ax = fig.add_subplot(1,1,1
+                     )
+ax.plot(dfmkt.index, dfmkt['close'], linewidth=0.5)
+ax.plot(dfmkt.index, dfmkt['ema_fast'])
+ax.plot(dfmkt.index, dfmkt['ema_slow'])
+
+dftrd = dfmkt[dfmkt['trade_qty'] != 0]
+for i in dftrd.index:
+    marker = "^" if dftrd.loc[i]['trade_qty'] > 0 else "v" 
+    color = "tab:red" if marker == "^" else "b" 
+    x = i
+    y = dftrd.loc[i]['close']
+    ax.scatter(x, y, color=color, marker=marker, s=300)
+
+# 전일종가 H-line
+day_table = product + '_day'
+yday_close = util.getYdayOHLC(date, table=day_table)['close']
+ax.axhline(y=yday_close, color='black', linestyle='dashed')
+
+ax2 = ax.twinx()
+ax2.fill_between(dfmkt.index, dfmkt['net_pl'], 0, alpha=0.3, color="gray")
+ax2.scatter(dfmkt.index[-1], 
+            dfmkt['net_pl'].iloc[-1],
+            color="tab:red" if dfmkt['net_pl'].iloc[-1] > 0 else "b", 
+            marker="o", s=50)
+
+ax3 = ax.twinx()
+ax3.spines["right"].set_position(("axes", 1.05)) ## 오른쪽 옆에 y축 추가
+ax3.fill_between(dfmkt.index, dfmkt['actual_qty'], 0, alpha=0.1, color="red")
+ax3.scatter(dfmkt.index[-1], 
+            dfmkt['actual_qty'].iloc[-1],
+            color="tab:red" if dfmkt['actual_qty'].iloc[-1] > 0 else "b", 
+            marker="^" if dfmkt['actual_qty'].iloc[-1] > 0 else "v",
+            s=50)
+
+
+# Set plot name as xlabel
+font = {'family': 'verdana',
+        'color':  'darkblue',
+        'weight': 'bold',
+        'size': 11,
+        }
+plot_name = '{3}, F_co: {0}, S_co: {1}, maxq: {2}, pl: {4:,}'
+plot_name = plot_name.format(K_FAST,
+                             K_SLOW,
+                             MAX_QTY,
+                             date,
+                             net_pl
+                             )
+ax.set_xlabel(plot_name, fontdict=font)
+plt.show()
 
 #%% temp
 

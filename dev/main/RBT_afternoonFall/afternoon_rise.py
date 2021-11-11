@@ -281,8 +281,8 @@ af_config = {'trading_begins_after': datetime.time(10,00,0),
              'thru': 0.5,
              'ema_margin': 0.5,
              'lc_hi-lo': 1.0, 
-             'lc_pl': -30, 
-             'pt_pl': 5,
+             'lc_pl': -20, 
+             'pt_pl': 10,
              'pt_draw_down': 0.3
              }
 

@@ -450,8 +450,8 @@ def afternoonFall(date, db_table, af_config, method="simple", plot="Y"):
 #일봉기준 전체 date list
 ld = list(util.getDailyOHLC().index)
 # ld = [d for d in ld if d.year in [2015, 2016, ]]
-# ld = [d for d in ld if d.year >= 2019 ]
-ld = [d for d in ld if d == datetime.date(2021, 11, 8)]
+ld = [d for d in ld if d.year == 2021 ]
+# ld = [d for d in ld if d >= datetime.date(2021, 11, 1)]
 
 #일간 PL을 기록하는 dataframe
 dfpl = pd.DataFrame(columns=['date', 'pl', 'num_trade'])
