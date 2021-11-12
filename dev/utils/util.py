@@ -158,10 +158,21 @@ def getNdayOHLC(candle_end_date, n, table='lktbf_day'):
             'low': min(df_ndays['low']),
             'close': df_ndays.loc[candle_end_date]['close']}
     
+def getDdayOHLC(today=datetime.date, table='lktbf_day', dfmkt=None):
+    """
+    returns : 당일 OHLC dict
+    """
+    if dfmkt == None:
+        dfmkt = getDailyOHLC(market_table_name=table)
     
+    return {'open': dfmkt.loc[today]['open'],
+            'high': dfmkt.loc[today]['high'],
+            'low': dfmkt.loc[today]['low'],
+            'close': dfmkt.loc[today]['close']}
+
 def getYdayOHLC(today=datetime.date, table='lktbf_day', dfmkt=None):
     """
-    returns : 전일 OHLC
+    returns : 전일 OHLC dict
     """
     if dfmkt == None:
         dfmkt = getDailyOHLC(market_table_name=table)
@@ -267,5 +278,66 @@ def reportSummary(dfpl, show_hist="n"):
     
     return dfpl_mon, dfpl_yr
     
+def stdTimeTable(date, db_table, look_back_days=20, yesterday=None):
+    """
+    look_back_days 기간동안의 시간대별 평균 cum_std를 담고 있는 table을 리턴
+    freq : '10sec' or 'min'
     
+    Returns
+    -------
+    freq 시간대별 cum_std Series
+    
+    """
+    
+    dfstd = pd.DataFrame(index=range(2430))
+    
+    for i in range(1, look_back_days+1):
+        if yesterday != None:
+            d = yesterday
+        else:
+            d = date_offset(date, -i)
+        refmkt = setDfData(d, d, db_table)
+        if refmkt['time'].iloc[0] <= pd.Timedelta(hours=9, minutes=10):
+            dfstd.loc[:, d] = refmkt['close'].expanding(1).std()
+        
+    init = pd.Timedelta(hours=9)
+    t = []
+    for i in range(2430) :
+        init+=pd.Timedelta(seconds=10)
+        t.append(init)
+    T = pd.TimedeltaIndex(t)
+    
+    dfstd.set_index(T, inplace=True)
+    
+    return dfstd.mean(axis=1)
 
+
+def apoStdRecent(date, db_table, K_FAST, K_SLOW, look_back_days=5, yesterday=None):
+    
+    apo_std_list = []
+    
+    for i in range(1, look_back_days+1):
+        if yesterday != None:
+            d = yesterday
+        else:
+            d = date_offset(date, -i)
+        refmkt = setDfData(d, d, db_table)
+        refdti = refmkt.index
+        
+        refmkt.at[refdti[0], 'ema_fast'] = refmkt.at[refdti[0], 'close']
+        refmkt.at[refdti[0], 'ema_slow'] = refmkt.at[refdti[0], 'close']
+        
+        for refdti_pre, refdti_now in zip(refdti, refdti[1:]):
+            last_prc = refmkt.loc[refdti_now,'close']
+            
+            refmkt.at[refdti_now, 'ema_fast'] = K_FAST * last_prc \
+                + (1 - K_FAST) * refmkt.at[refdti_pre, 'ema_fast']
+            
+            refmkt.at[refdti_now, 'ema_slow'] = K_SLOW * last_prc \
+                + (1 - K_SLOW) * refmkt.at[refdti_pre, 'ema_slow']
+        
+        diff_day = np.array(refmkt['ema_fast']) - np.array(refmkt['ema_slow'])
+        
+    apo_std_list.append(np.std(diff_day))
+            
+    return np.mean(apo_std_list)
