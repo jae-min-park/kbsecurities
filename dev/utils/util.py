@@ -9,6 +9,7 @@ import pandas as pd
 import pymysql
 import datetime
 import numpy as np
+from tqdm import tqdm
 
 test_db = pymysql.connect(user='admin',
                           passwd='se21121',
@@ -101,8 +102,6 @@ def convertRtTickToVol(dftick, vol_bin):
         
     return dfbinned
     
-        
-        
 
 
 def date_offset(ref_day, n=int):
@@ -183,6 +182,15 @@ def getYdayOHLC(today=datetime.date, table='lktbf_day', dfmkt=None):
             'high': dfmkt.loc[yday]['high'],
             'low': dfmkt.loc[yday]['low'],
             'close': dfmkt.loc[yday]['close']}
+
+def getMktTime(date=datetime.date):
+    """
+    returns : 장 시작시간 및 종료시간 리턴
+    """
+    dfmkt = setDfData(date,date,'lktbf_min')
+    
+    return {'start': datetime.time(dfmkt.datetime.iloc[0].time().hour, 0),
+            'end': dfmkt.datetime.iloc[-1].time()}
 
 def getNdayMovingAverage(today, n, asset='lktbf', option="close"):
     """
@@ -291,7 +299,8 @@ def stdTimeTable(date, db_table, look_back_days=20, yesterday=None):
     
     dfstd = pd.DataFrame(index=range(2430))
     
-    for i in range(1, look_back_days+1):
+    print("Calculating std table")
+    for i in tqdm(range(1, look_back_days+1)):
         if yesterday != None:
             d = yesterday
         else:
@@ -306,6 +315,7 @@ def stdTimeTable(date, db_table, look_back_days=20, yesterday=None):
         init+=pd.Timedelta(seconds=10)
         t.append(init)
     T = pd.TimedeltaIndex(t)
+    # T = pd.to_datetime(T.astype(np.int64)).time
     
     dfstd.set_index(T, inplace=True)
     
@@ -315,8 +325,8 @@ def stdTimeTable(date, db_table, look_back_days=20, yesterday=None):
 def apoStdRecent(date, db_table, K_FAST, K_SLOW, look_back_days=5, yesterday=None):
     
     apo_std_list = []
-    
-    for i in range(1, look_back_days+1):
+    print("Calculating recent APO std")
+    for i in tqdm(range(1, look_back_days+1)):
         if yesterday != None:
             d = yesterday
         else:
