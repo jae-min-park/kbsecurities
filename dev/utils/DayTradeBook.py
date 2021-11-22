@@ -47,7 +47,12 @@ class DayTradeBook:
             
         self.tick_conversion = 1 / self.tick_value
                 
-        self.yday_close = util.getYdayOHLC(date, table=self.product + '_day')['close']
+        self.date = date
+        self.yday = util.date_offset(date, -1)
+        
+        self.yday_close = util.getDdayOHLC(self.yday, table=self.product + '_day')['close']
+        self.yday_lo = util.getDdayOHLC(self.yday, table=self.product + '_day')['low']
+        self.yday_hi = util.getDdayOHLC(self.yday, table=self.product + '_day')['high']
         
         self.siga_time = util.getMktTime(date)['start']
         
@@ -58,21 +63,33 @@ class DayTradeBook:
                      'trade_price',
                      'trade_qty',
                      'trade_type',
-                     'remark'
+                     'remark',
+                     'pos_id',
                      ])
+        
+        
         
     def logTrade(self, trade_time, trade_price, trade_qty, trade_type, 
                  signal_time=None, signal_price=None, remark=None):
         if signal_time == None: signal_time = trade_time
         if signal_price == None: signal_price = trade_price
         
-        row =[signal_time, signal_price, trade_time, trade_price, trade_qty, 
-              trade_type, remark]
+        if trade_type == 'ini':
+            if self.book.empty:
+                pos_id = 1
+            else:
+                pos_id = self.book['pos_id'].iloc[-1] + 1
+        else:
+            pos_id = self.book['pos_id'].iloc[-1]
+            
+        row =[signal_time, signal_price, 
+              trade_time, trade_price, trade_qty, 
+              trade_type, remark, pos_id]
         self.book.loc[len(self.book)] = row
         print(trade_time, trade_price, trade_qty, trade_type, remark)
         pass
     
-    def exitOpenPosition(self, trade_time, mid_price, remark=None):
+    def exitOpenPosition(self, trade_time, mid_price, remark, signal_price=None):
         open_position_qty = self.getOpenPositionQty()
         
         if open_position_qty == 0:
@@ -83,16 +100,22 @@ class DayTradeBook:
                               trade_price = mid_price - 0.5*self.tick_value, 
                               trade_qty = -open_position_qty,
                               trade_type='ext',
-                              remark = remark)
+                              remark = remark,
+                              signal_price=signal_price)
             else:
                 self.logTrade(trade_time = trade_time, 
                               trade_price = mid_price + 0.5*self.tick_value, 
                               trade_qty = -open_position_qty, 
                               trade_type='ext',
-                              remark = remark)
+                              remark = remark,
+                              signal_price=signal_price)
         pass
     
-
+    def addDatetimeColumn(self):
+        if not self.book.empty:
+            self.book['datetime'] = self.book['trade_time'].apply(lambda x: x + pd.Timestamp(self.date))
+        pass
+        
     def getOpenPositionQty(self):
         return self.book['trade_qty'].sum()
     
@@ -121,15 +144,45 @@ class DayTradeBook:
             raise ValueError("No trade yet")
         else:
             return self.book['trade_price'].iloc[-1]
+        
+    def getLastTradeQty(self):
+        if self.book.empty:
+            raise ValueError("No trade yet")
+        else:
+            return self.book['trade_qty'].iloc[-1]
     
     def isMovedEnoughFromLastTrade(self, price, min_price_move_required):
-        if self.book.empty:
+        # mean reversion 관점에서 최근거래대비 가격 개선 여부를 체크 
+        if self.book.empty: # 거래가 없는 경우
             return True
-        else:
-            if abs(price - self.getLastTradePrice()) > min_price_move_required:
-                return True
+        elif self.getOpenPositionQty() == 0: # 거래는 있었는데 Open은 없는 경우
+            return True
+        else: # open position이 있는 경우
+            # 마지막이 숏인 경우 더 강해져야 add
+            if  self.getLastTradeQty() < 0:
+                if price - self.getLastTradePrice() > min_price_move_required:
+                    return True
+            # 마지막이 롱인 경우 더 밀려야 add
+            elif self.getLastTradeQty() > 0:
+                if price - self.getLastTradePrice() < -min_price_move_required:
+                    return True
             else: 
                 return False
+    
+    def getLastClosedPositionInfo(self):
+        if not 'ext' in self.book.trade_type.values: # ext trade 한번도 없었음
+            raise ValueError("No Closed position yet")
+        else:
+            last_exit_index = self.book[self.book['trade_type'] == 'ext'].index[-1]
+            last_pos_id = self.book.loc[last_exit_index]['pos_id']
+            last_pos_book = self.book[self.book['pos_id'] == last_pos_id]
+            
+            last_pos_direction = 'short' if last_pos_book.iloc[0]['trade_qty'] < 0 else 'long'
+            last_pos_remark = last_pos_book.iloc[-1]['remark']
+            
+            return last_pos_direction, last_pos_remark
+            
+        
     
     def getOpenPnl(self, price, unit='krw'):
         """
@@ -149,13 +202,15 @@ class DayTradeBook:
             elif unit == 'tick': # without commission
                 return round(self.tick_conversion * sumproduct / sum(qty_arr), 2)
             
-    def getCumPl(self, price, unit='krw'):
+    def getCumPl(self, price=None, unit='krw'):
         """
         returns cumulative pnl in unit ('krw' or 'tick')
         """
         if self.book.empty:
             return 0
         else:
+            if price == None:
+                price = self.book['trade_price'].iloc[-1]
             qty_arr = np.array(self.book.trade_qty)
             price_arr = np.array(self.book.trade_price)
             sumproduct = sum(qty_arr * (price - price_arr))
