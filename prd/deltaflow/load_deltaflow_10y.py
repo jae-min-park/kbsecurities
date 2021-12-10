@@ -330,13 +330,13 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
                         calendar.loc[j,'N+2'] = day+ pd.Timedelta(days=2)
                         calendar.loc[j,'N+3'] = day+ pd.Timedelta(days=3)
                         calendar.loc[j,'N+4'] = day+ pd.Timedelta(days=4)
-            if type(calendar.loc[j, '5Y']) != int:
-                if calendar.loc[12, '5Y'] <= day :
-                    calendar.loc[12,'N'] = day
-                    calendar.loc[12,'N+1'] = day+ pd.Timedelta(days=1)
-                    calendar.loc[12,'N+2'] = day+ pd.Timedelta(days=2)
-                    calendar.loc[12,'N+3'] = day+ pd.Timedelta(days=3)
-                    calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
+            # if type(calendar.loc[j, '5Y']) != int:
+            #     if calendar.loc[12, '5Y'] <= day :
+            #         calendar.loc[12,'N'] = day
+            #         calendar.loc[12,'N+1'] = day+ pd.Timedelta(days=1)
+            #         calendar.loc[12,'N+2'] = day+ pd.Timedelta(days=2)
+            #         calendar.loc[12,'N+3'] = day+ pd.Timedelta(days=3)
+            #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
         i+=1
     for i in range(2,13) :
         calendar.loc[i-1,:]= calendar.loc[i,:]
@@ -1104,12 +1104,16 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            if '20원금' in abb_list[10].keys() :
+            if '20원금' in abb_list[9].keys() :
+                label += ", ".join(sorted(list(set(abb_list[9]['20원금']))))
+            elif '20원금' in abb_list[10].keys() :
                 label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
         elif '30년이상' in df.columns[0]:
             label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            if '30원금' in abb_list[10].keys():
+            if '30원금' in abb_list[9].keys():
+                label += ", ".join(sorted(list(set(abb_list[9]['30원금']))))+", "
+            elif '30원금' in abb_list[10].keys():
                 label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
             elif '30원금' in abb_list[11].keys():
                 label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
@@ -1171,4 +1175,4 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# cal,last_df = showDeltaflow('2021-09-13',8)
+# cal,last_df = showDeltaflow('2021-12-13',11)

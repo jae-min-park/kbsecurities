@@ -401,10 +401,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         # last_df.loc[i,'물가_avg'] = 0        
         last_df.loc[i,'total_avg'] = 0
     
-    future_df = setDfData(date, date,'futures_bpv')
-    set_df = setDfData(date, date,'setting_delta').drop('date',axis=1)
-    # future_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'futures_bpv')
-    # set_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'setting_delta').drop('date',axis=1)
+    # future_df = setDfData(date, date,'futures_bpv')
+    # set_df = setDfData(date, date,'setting_delta').drop('date',axis=1)
+    future_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'futures_bpv')
+    set_df = setDfData(str(datetime.now())[:10], str(datetime.now())[:10],'setting_delta').drop('date',axis=1)
     
     """평균값구하기"""
     cnt=cnt5y=cnt5y_1=cnt5y_2=cnt5y_3=cnt5y_4=cnt30y=cnt30y_1=cnt30y_2=cnt30y_3=cnt30y_4=cnt3y=cnt3y_1=cnt3y_2=cnt3y_3=cnt3y_4=cnt10y=cnt10y_1=cnt10y_2=cnt10y_3=cnt10y_4=0
@@ -1109,12 +1109,16 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            if '20원금' in abb_list[10].keys() :
+            if '20원금' in abb_list[9].keys() :
+                label += ", ".join(sorted(list(set(abb_list[9]['20원금']))))
+            elif '20원금' in abb_list[10].keys() :
                 label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
         elif '30년이상' in df.columns[0]:
             label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            if '30원금' in abb_list[10].keys():
+            if '30원금' in abb_list[9].keys():
+                label += ", ".join(sorted(list(set(abb_list[9]['30원금']))))+", "
+            elif '30원금' in abb_list[10].keys():
                 label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
             elif '30원금' in abb_list[11].keys():
                 label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
@@ -1175,5 +1179,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# calendar,last_df = showDeltaflow(date='2021-10-05', month=9)
+# calendar,last_df = showDeltaflow(date='2021-12-01', month=11)
 # calendar,last_df = showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')

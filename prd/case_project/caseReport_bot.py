@@ -88,7 +88,7 @@ def echo(update, context):
     logging.info(f'{user_id} /echo {update.message.text}')
     
     if user_id not in users:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="회원 가입을 위해 관리자에게 연락해 주세요")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="회원 가입을 위해 관리자(kb증권 채권운용부 박재민 과장)에게 연락해 주세요")
         return
     
     user_text = ' '.join(update.message.text.split())
@@ -97,7 +97,8 @@ def echo(update, context):
     case = ''
     asset = 'ALL'
     offset = 0
-    series = 6
+    startplot = 0
+    endplot = 6
     _prev = -3
     _next = 2
     
@@ -113,7 +114,7 @@ def echo(update, context):
                 elif item in '5년입찰' :
                     case = 'AUCT5'
                 elif item in '금통위' :
-                    case = 'BOKMPC'
+                    case = 'BOKMPC_ALL'
             else :
                 context.bot.send_message(chat_id=update.effective_chat.id, text="/cases list에 있는 이벤트를 입력해 주세요")
                 return
@@ -128,18 +129,27 @@ def echo(update, context):
                 elif item in ['스플']:
                     asset = 'SP'
                     df = dfktbsp
-            elif int(item) in list(range(-20,20,1)) :
+            elif int(item) in list(range(-20,21,1)) :
                 asset = 'ALL'
                 offset = int(item)
             else :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -10~10사이의 정수 offset을 입력해 주세요")
+                context.bot.send_message(chat_id=update.effective_chat.id, text="두번째 매개변수로 /assets list에 있는 종목이나 -20~20의 정수 offset을 입력해 주세요")
                 return
         if i == 2 and asset != 'ALL':
             offset = int(item)
-        elif i == 2 :
-            series = int(item)
+        elif i == 2 and '~' in item:
+            it = item.split('~')
+            startplot = int(it[0])
+            endplot = int(it[1])
+            if startplot >= endplot :
+                context.bot.send_message(chat_id=update.effective_chat.id, text="~ 을 기준으로 앞의수가 뒤의수보다 작아야 합니다.")
+            # series = int(item)
         if i == 3 and asset != 'ALL':
-            series = int(item)
+            it = item.split('~')
+            startplot = int(it[0])
+            endplot = int(it[1])
+            if startplot >= endplot :
+                context.bot.send_message(chat_id=update.effective_chat.id, text="~ 을 기준으로 앞의수가 뒤의수보다 작아야 합니다.")
         if i == 4 and asset != 'ALL':
             _prev = int(item)
         if i == 5 and asset != 'ALL':
@@ -153,18 +163,18 @@ def echo(update, context):
                 df = df10
             elif item == 'SP':
                 df = dfktbsp
-            filename = f'{case}_{item}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
+            filename = f'{case}_{item}_{startplot}start_{endplot}end_{offset}off_{_prev}prev_{_next}next.jpg'
             logging.info(f'{update.effective_chat.id} /echo_all {filename}')
             # logging.info('/echo_all '+str(update.effective_chat.id)+' '+filename)
-            auct_intra.setPlot(df, case, item, offset, series, _prev, _next)
+            auct_intra.setPlot(df, case, item, offset, startplot, endplot, _prev, _next)
             context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
     else :
-        filename = f'{case}_{asset}_{series}series_{offset}off_{_prev}prev_{_next}next.jpg'
+        filename = f'{case}_{asset}_{startplot}start_{endplot}end_{offset}off_{_prev}prev_{_next}next.jpg'
         logging.info(f'{update.effective_chat.id} /echo {filename}')
         # logging.info('/echo '+str(update.effective_chat.id)+' '+filename)
             
         # context.bot.send_message(chat_id=update.effective_chat.id, text=filename)
-        auct_intra.setPlot(df, case, asset, offset, series, _prev, _next)
+        auct_intra.setPlot(df, case, asset, offset, startplot, endplot, _prev, _next)
         context.bot.send_photo(chat_id=update.effective_chat.id, photo = open('D:\\dev\\case_data\\'+filename,'rb'))
   
 start_handler = CommandHandler('start',start)
