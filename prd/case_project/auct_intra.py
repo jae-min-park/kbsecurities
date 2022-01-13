@@ -76,13 +76,13 @@ dfktbsp = loadmkt.update_futures_rt(dfktbsp, fut_name='sp')
 # # pu.plot_multly(dfhanmi, dates, CASE+" HANMI "+timenote, PREV_NUM, NEXT_NUM)
 
 """ 이미지를 요청시 생성"""
-def setPlot(df, case, asset, offset=0, numplot=6, prev_num=3, next_num=-2) :
-    dates = du.read_casedates(case, "KR", )[:numplot] #최근 입찰
+def setPlot(df, case, asset, offset=0, startplot=0, endplot=6, prev_num=3, next_num=-2) :
+    dates = du.read_casedates(case, "KR", )[startplot:endplot] #최근 입찰
     ld_all = du.get_date_list(df)
     dates = du.date_offset_list(ld_all, dates, offset)
     # dates += [pd.Timestamp(2021,4,19)]
     dates = du.remove_yyyymm(dates, [202002, 202003, 202004,]) #코로나 변동월 제거
-    filename = f'{case}_{asset}_{numplot}series_{offset}off_{prev_num}prev_{next_num}next'
+    filename = f'{case}_{asset}_{startplot}start_{endplot}end_{offset}off_{prev_num}prev_{next_num}next'
     pu.plot_multly(df, dates, case+' '+asset+' '+timenote, prev_num, next_num, offset=offset, filename=filename)
 
 

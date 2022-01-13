@@ -137,7 +137,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
         '5Y','5Y+1','5Y+2','5Y+3','5Y+4',
         'N','N+1','N+2','N+3','N+4',        
         ]
-    idx = list(range(1,13))
+    idx = list(range(1,14))
     calendar = pd.DataFrame(columns=cols, index=idx)
     calendar.fillna(0, inplace=True)
     holidays = np.array(holi['DATES'])
@@ -323,7 +323,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
     i = 1
     for day in auct_none['입찰없는막주월요일'] :
         if auct_none.loc[i-1,'요일'] == 'Mon':
-            for j in range(1,12):
+            for j in range(1,14):
                 if type(calendar.loc[j, '30Y']) != int and type(calendar.loc[j, '5Y']) != int  :
                     if calendar.loc[j, '5Y'] <= day and day <= calendar.loc[j, '30Y'] :
                         calendar.loc[j,'N'] = day
@@ -340,7 +340,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
                 
         i+=1
-    for i in range(2,13) :
+    for i in range(2,14) :
         calendar.loc[i-1,'5Y':]= calendar.loc[i,'5Y':]
     return calendar, holi
 
@@ -630,6 +630,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
     target_idx = 0
     target_date = start_date
     dates=[]
+    
+    month -=1  ## 연말용 임시코드
     for j in range(21) :    
         start_date = calendar.loc[month,'30Y']-pd.Timedelta(days=3)
         while start_date in np.array(holi['DATES']) or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
@@ -1015,8 +1017,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
         treasury_result_df = setDfData(start_date, move_date,'treasury_vol')
         df3f = setDfData(start_date, move_date,'ktbf3y_vol')[::-1]
         df10f = setDfData(start_date, move_date,'ktbf10y_vol')[::-1]
-        df3f.set_index('date', inplace=True)
-        df10f.set_index('date', inplace=True)
+        if not df3f.empty :
+            df3f.set_index('date', inplace=True)
+        if not df10f.empty :
+            df10f.set_index('date', inplace=True)
         
         cols = ['외국인','투신','보험기금','은행','증권','상장']
         # idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
@@ -1190,4 +1194,4 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
 
     return calendar, last_df
     
-# cal, last_df = showDeltaflow('2021-10-25',10)
+# cal, last_df = showDeltaflow('2021-12-28',13)

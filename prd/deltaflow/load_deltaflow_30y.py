@@ -137,7 +137,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             'N','N+1','N+2','N+3','N+4',
             '30Y','30Y+1','30Y+2','30Y+3','30Y+4',
             ]
-    idx = list(range(1,13))
+    idx = list(range(1,14))
     calendar = pd.DataFrame(columns=cols, index=idx)
     calendar.fillna(0, inplace=True)
     holidays = np.array(holi['DATES'])
@@ -341,14 +341,17 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
         i+=1
     
-    for i in range(2,13) :
+    for i in range(2,14) :
         calendar.loc[i-1,'5Y':'30Y+4']= calendar.loc[i,'5Y':'30Y+4']
     return calendar, holi
 
 """ 조회화면 값 입력하는 반복하여 호출되는 유틸성 함수 """
 def getResultTable(df,abb_list,set_df, treasury_result_df, start_date, end_date, asset, is_abb=False) :
     tmp = set_df[set_df['연물분류']==asset]
-    joined = pd.merge(treasury_result_df, tmp, left_on='종목코드', right_on='종목코드')
+    joined = pd.DataFrame()
+    if not tmp.empty and not treasury_result_df.empty :
+        joined = pd.merge(treasury_result_df, tmp, left_on='종목코드', right_on='종목코드')
+        
     bools =[]
     for i in joined.index:
         if joined.iloc[i]['date'] >=start_date and joined.iloc[i]['date']<=end_date:
@@ -543,8 +546,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
             treasury_result_df = setDfData(start_date, move_date,'treasury_vol')
             df3f = setDfData(start_date, move_date,'ktbf3y_vol')[::-1]
             df10f = setDfData(start_date, move_date,'ktbf10y_vol')[::-1]
-            df3f.set_index('date', inplace=True)
-            df10f.set_index('date', inplace=True)
+            if not df3f.empty :
+                df3f.set_index('date', inplace=True)
+            if not df10f.empty :
+                df10f.set_index('date', inplace=True)
             
             cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
             # idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
@@ -630,6 +635,9 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     target_idx = 0
     target_date = start_date
     dates=[]
+    
+    #임시코
+    month -=1
     for j in range(21) :    
         start_date = calendar.loc[month,'3Y']-pd.Timedelta(days=3)
         while start_date in np.array(holi['DATES']) or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
@@ -892,6 +900,8 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                 dates.append(str(move_date)[5:10])
         if j == 15:
             move_date = calendar.loc[month,'5Y+4']
+            move_date = pd.Timestamp('2021-12-30') #임시
+            
             if calendar.loc[month,'N+4'] != 0:
                 move_date = calendar.loc[month,'N+4']
                 dates.append('공백')
@@ -1002,8 +1012,10 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         treasury_result_df = setDfData(start_date, move_date,'treasury_vol')
         df3f = setDfData(start_date, move_date,'ktbf3y_vol')[::-1]
         df10f = setDfData(start_date, move_date,'ktbf10y_vol')[::-1]
-        df3f.set_index('date', inplace=True)
-        df10f.set_index('date', inplace=True)
+        if not df3f.empty :
+            df3f.set_index('date', inplace=True)
+        if not df10f.empty :
+            df10f.set_index('date', inplace=True)
         
         cols = ['외국인','투신','보험기금','은행','증권','상장','약어']
         # idx = ['2Y','3Y','3선','5Y','7Y','10Y','10선','물가','15Y','20Y','20원금','30Y','30원금','50Y','50원금','합계']
@@ -1084,6 +1096,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     barplot_diff=[] # 델타괴리 barplot diff
     
     """테너별 plot"""
+    # target_date = '2021-12-30'#임시
     for df in dfs :
         ax = df.plot()
         plt.xticks(np.arange(0,len(dates)), dates, rotation=45)
@@ -1109,25 +1122,27 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
         elif df.columns[0] == '15년~20년':
             label += ", ".join(sorted(list(set(abb_list[5]['15Y']))))+", "
             label += ", ".join(sorted(list(set(abb_list[6]['20Y']))))+", "
-            if '20원금' in abb_list[9].keys() :
-                label += ", ".join(sorted(list(set(abb_list[9]['20원금']))))
-            elif '20원금' in abb_list[10].keys() :
-                label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
+            if len(abb_list) >= 10 :
+                if '20원금' in abb_list[9].keys() :
+                    label += ", ".join(sorted(list(set(abb_list[9]['20원금']))))
+                elif '20원금' in abb_list[10].keys() :
+                    label += ", ".join(sorted(list(set(abb_list[10]['20원금']))))
         elif '30년이상' in df.columns[0]:
-            label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
-            label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
-            if '30원금' in abb_list[9].keys():
-                label += ", ".join(sorted(list(set(abb_list[9]['30원금']))))+", "
-            elif '30원금' in abb_list[10].keys():
-                label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
-            elif '30원금' in abb_list[11].keys():
-                label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
-            if '50원금' in abb_list[10].keys():
-                label += ", ".join(sorted(list(set(abb_list[10]['50원금']))))+", "
-            elif '50원금' in abb_list[11].keys():
-                label += ", ".join(sorted(list(set(abb_list[11]['50원금']))))+", "
-            elif '50원금' in abb_list[12].keys() :
-                label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))+", "
+            if len(abb_list) >= 9 :
+                label += ", ".join(sorted(list(set(abb_list[7]['30Y']))))+", "
+                label += ", ".join(sorted(list(set(abb_list[8]['50Y']))))+"\n"
+                if '30원금' in abb_list[9].keys():
+                    label += ", ".join(sorted(list(set(abb_list[9]['30원금']))))+", "
+                elif '30원금' in abb_list[10].keys():
+                    label += ", ".join(sorted(list(set(abb_list[10]['30원금']))))+", "
+                elif '30원금' in abb_list[11].keys():
+                    label += ", ".join(sorted(list(set(abb_list[11]['30원금']))))+", "
+                if '50원금' in abb_list[10].keys():
+                    label += ", ".join(sorted(list(set(abb_list[10]['50원금']))))+", "
+                elif '50원금' in abb_list[11].keys():
+                    label += ", ".join(sorted(list(set(abb_list[11]['50원금']))))+", "
+                elif '50원금' in abb_list[12].keys() :
+                    label += ", ".join(sorted(list(set(abb_list[12]['50원금']))))+", "
         # elif df.columns[0] == '물가':
         #     label += ", ".join(set(abb_list[9]['물가']))    
         ax.set_xlabel(label)
@@ -1179,5 +1194,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# calendar,last_df = showDeltaflow(date='2021-12-01', month=11)
+# calendar,last_df = showDeltaflow(date='2022-01-04', month=13)
 # calendar,last_df = showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')

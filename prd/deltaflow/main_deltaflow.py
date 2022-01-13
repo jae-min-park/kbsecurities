@@ -8,16 +8,17 @@ pd.options.mode.chained_assignment = None
 
 
 # # 30년입찰주
-calendar,last_df = ldf30y.showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')
+# calendar,last_df = ldf30y.showDeltaflow(date = str(datetime.now())[:10], month=13,first_day ='2021-01-01', y5_day='2020-12-07')
 # calendar,last_df = ldf30y.showDeltaflow(date = '2021-08-30', month=8,first_day ='2021-01-01', y5_day='2020-12-07')
 
 # # 3년입찰주
-# calendar,last_df = ldf3y.showDeltaflow(date = str(datetime.now())[:10], month=8,first_day ='2021-01-01', y5_day='2020-12-07')
+calendar,last_df = ldf3y.showDeltaflow(date = str(datetime.now())[:10], month=12,first_day ='2021-01-01', y5_day='2020-12-07')
+# calendar,last_df = ldf3y.showDeltaflow(date = '2021-11-08', month=10,first_day ='2021-01-01', y5_day='2020-12-07')
 
 # 10년입찰주
-# calendar, last_df = ldf10y.showDeltaflow(date = str(datetime.now())[:10], month=8,first_day ='2021-01-01', y5_day='2020-12-07')
+# calendar, last_df = ldf10y.showDeltaflow(date = str(datetime.now())[:10], month=11,first_day ='2021-01-01', y5_day='2020-12-07')
 # calendar, last_df = ldf10y.showDeltaflow(date = '2021-08-20', month=7, first_day ='2021-01-01', y5_day='2020-12-07')
 
 # 5년입찰주 및 입찰공백주
-# calendar, last_df = ldf5y.showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')
+# calendar, last_df = ldf5y.showDeltaflow(date = str(datetime.now())[:10], month=13,first_day ='2021-01-01', y5_day='2020-12-07')
 # calendar, last_df = ldf5y.showDeltaflow(date = '2021-09-23', month=9,first_day ='2021-01-01', y5_day='2020-12-07')
