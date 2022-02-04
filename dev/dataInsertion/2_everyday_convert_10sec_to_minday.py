@@ -48,6 +48,7 @@ def insertDayData(cursor, df, table):
 
 start_date = str(datetime.datetime.today())[:10]
 end_date = str(datetime.datetime.today())[:10]
+
 # start_date = '2013-09-17'
 # end_date = '2017-12-17'
 
@@ -99,6 +100,3 @@ dfr = df.resample('D', closed='right').agg({'open': 'first','high': 'max','low':
 dfr= dfr.dropna()
 print(dfr)
 insertDayData(cursor, dfr,'usdkrw_day')
-
-
-

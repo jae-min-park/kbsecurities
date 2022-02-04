@@ -137,7 +137,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             'N','N+1','N+2','N+3','N+4',
             '30Y','30Y+1','30Y+2','30Y+3','30Y+4',
             ]
-    idx = list(range(1,14))
+    idx = list(range(1,15))
     calendar = pd.DataFrame(columns=cols, index=idx)
     calendar.fillna(0, inplace=True)
     holidays = np.array(holi['DATES'])
@@ -341,8 +341,10 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
         i+=1
     
-    for i in range(2,14) :
+    for i in range(2,15) :
         calendar.loc[i-1,'5Y':'30Y+4']= calendar.loc[i,'5Y':'30Y+4']
+    for i in range(2,15) :
+        calendar.loc[i-1,:]= calendar.loc[i,:]
     return calendar, holi
 
 """ 조회화면 값 입력하는 반복하여 호출되는 유틸성 함수 """
@@ -636,8 +638,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     target_date = start_date
     dates=[]
     
-    #임시코
-    month -=1
+    #임시코 month -=1
     for j in range(21) :    
         start_date = calendar.loc[month,'3Y']-pd.Timedelta(days=3)
         while start_date in np.array(holi['DATES']) or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
@@ -900,7 +901,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
                 dates.append(str(move_date)[5:10])
         if j == 15:
             move_date = calendar.loc[month,'5Y+4']
-            move_date = pd.Timestamp('2021-12-30') #임시
+            #move_date = pd.Timestamp('2021-12-30') #임시
             
             if calendar.loc[month,'N+4'] != 0:
                 move_date = calendar.loc[month,'N+4']
@@ -1194,5 +1195,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=8, first_day ='2021-01-
     
     return calendar, last_df
     
-# calendar,last_df = showDeltaflow(date='2022-01-04', month=13)
+# calendar,last_df = showDeltaflow(date='2022-02-07', month=12, first_day ='2021-02-08', y5_day='2021-02-22')
 # calendar,last_df = showDeltaflow(date = str(datetime.now())[:10], month=9,first_day ='2021-01-01', y5_day='2020-12-07')

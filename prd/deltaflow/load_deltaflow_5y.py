@@ -129,7 +129,7 @@ def getAuctValues(first_day ='2021-01-01', y5_day='2020-12-07') :
     return auct30, auct3, auct10, auct5, auct_none, holi, mon_holi
 
 
-def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
+def makeCalendar(first_day ='2021-01-01', y5_day='2021-02-22') :
     auct30, auct3, auct10, auct5, auct_none, holi, mon_holi = getAuctValues(first_day, y5_day)
     cols = ['30Y','30Y+1','30Y+2','30Y+3','30Y+4',
         '3Y','3Y+1','3Y+2','3Y+3','3Y+4',
@@ -137,7 +137,7 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
         '5Y','5Y+1','5Y+2','5Y+3','5Y+4',
         'N','N+1','N+2','N+3','N+4',        
         ]
-    idx = list(range(1,14))
+    idx = list(range(1,15))
     calendar = pd.DataFrame(columns=cols, index=idx)
     calendar.fillna(0, inplace=True)
     holidays = np.array(holi['DATES'])
@@ -323,7 +323,18 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
     i = 1
     for day in auct_none['입찰없는막주월요일'] :
         if auct_none.loc[i-1,'요일'] == 'Mon':
-            for j in range(1,14):
+            for j in range(1,13):
+                if type(calendar.loc[j+1, '30Y']) != int and type(calendar.loc[j, '5Y']) != int  :
+                    if calendar.loc[j, '5Y'] >= day or calendar.loc[j+1, '30Y'] <= day:
+                        pass
+                else:
+                    calendar.loc[j,'N'] = day
+                    calendar.loc[j,'N+1'] = day+ pd.Timedelta(days=1)
+                    calendar.loc[j,'N+2'] = day+ pd.Timedelta(days=2)
+                    calendar.loc[j,'N+3'] = day+ pd.Timedelta(days=3)
+                    calendar.loc[j,'N+4'] = day+ pd.Timedelta(days=4)
+            #임시 for j in range(1,15):
+            for j in range(1,13):
                 if type(calendar.loc[j, '30Y']) != int and type(calendar.loc[j, '5Y']) != int  :
                     if calendar.loc[j, '5Y'] <= day and day <= calendar.loc[j, '30Y'] :
                         calendar.loc[j,'N'] = day
@@ -340,8 +351,15 @@ def makeCalendar(first_day ='2021-01-01', y5_day='2020-12-07') :
             #         calendar.loc[12,'N+4'] = day+ pd.Timedelta(days=4)
                 
         i+=1
-    for i in range(2,14) :
-        calendar.loc[i-1,'5Y':]= calendar.loc[i,'5Y':]
+      
+    # 임시
+    # for i in range(2,15) :
+    #     calendar.loc[i-1,'5Y':]= calendar.loc[i,'5Y':]
+    # calendar.loc[12, 'N'] = pd.Timestamp('2022-01-31')
+    # calendar.loc[12, 'N+1'] = pd.Timestamp('2022-02-01')
+    # calendar.loc[12, 'N+2'] = pd.Timestamp('2022-02-02')
+    # calendar.loc[12, 'N+3'] = pd.Timestamp('2022-02-03')
+    # calendar.loc[12, 'N+4'] = pd.Timestamp('2022-02-04')
     return calendar, holi
 
 """ 조회화면 값 입력하는 반복하여 호출되는 유틸성 함수 """
@@ -369,7 +387,7 @@ def getResultTable(df,abb_list,set_df, treasury_result_df, start_date, end_date,
     # df.loc[asset,'상장'] = round(np.sum(tmp_joined['상장잔액증감(원)'] * tmp_joined['델타'])/10**12,2)
     return df,abb_list
 
-def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-01', y5_day='2020-12-07') :
+def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-02-01', y5_day='2021-02-22') :
     calendar, holi = makeCalendar(first_day, y5_day)
     last_df = pd.DataFrame()
     for i in range(21): # 0:5Y, 1:5Y+1, 2:5Y+2, 3:5Y+3, 4:5Y+4, 5:30Y, 6:30Y+1, 7:30Y+2, 8:30Y+3, 9:30Y+4, 10:3Y, 11:3Y+1, 12:3Y+2, 13:3Y+3, 14:3Y+4, 15:10Y, 16:10Y+1, 17:10Y+2, 18:10Y+3, 19:10Y+4
@@ -631,10 +649,11 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
     target_date = start_date
     dates=[]
     
-    month -=1  ## 연말용 임시코드
+    # month -=1  ## 연말용 임시코드
     for j in range(21) :    
         start_date = calendar.loc[month,'30Y']-pd.Timedelta(days=3)
-        while start_date in np.array(holi['DATES']) or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
+        while start_date in np.array(holi['DATES']) or start_date == pd.Timestamp('2021-12-31') or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
+        # 임시 while start_date in np.array(holi['DATES']) or start_date.day_name() == 'Saturday' or start_date.day_name() == 'Sunday' :
             start_date = start_date - pd.Timedelta(days=1)
         move_date = ''
         if j == 0:
@@ -1186,6 +1205,7 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
     ax.set_ylabel('억원')
     ax.set_xlabel('테너')
     title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (괄호안 전일비)'
+    # title = f'{str(target_date)[5:10]} YTD월평균 대비 은증델타 괴리 (괄호안 전일비)'
     # title = f' YTD월평균 대비 은증델타 괴리 (일간, 숫자는 전일비)'
     ax.set_title(title)
     ax.xaxis.grid(True)
@@ -1194,4 +1214,5 @@ def showDeltaflow(date = str(datetime.now())[:10], month=9, first_day ='2021-01-
 
     return calendar, last_df
     
-# cal, last_df = showDeltaflow('2021-12-28',13)
+# cal, last_df = showDeltaflow('2022-02-03',12)
+# cal, last_df = showDeltaflow('2022-01-27',12)
