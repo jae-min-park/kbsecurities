@@ -137,22 +137,9 @@ def echo(update, context):
                 return
         if i == 2 and asset != 'ALL':
             offset = int(item)
-        elif i == 2 and '~' in item:
-            it = item.split('~')
-            startplot = int(it[0])
-            endplot = int(it[1])
-            if startplot >= endplot :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="~ 을 기준으로 앞의수가 뒤의수보다 작아야 합니다.")
-            # series = int(item)
         if i == 3 and asset != 'ALL':
-            it = item.split('~')
-            startplot = int(it[0])
-            endplot = int(it[1])
-            if startplot >= endplot :
-                context.bot.send_message(chat_id=update.effective_chat.id, text="~ 을 기준으로 앞의수가 뒤의수보다 작아야 합니다.")
-        if i == 4 and asset != 'ALL':
             _prev = int(item)
-        if i == 5 and asset != 'ALL':
+        if i == 4 and asset != 'ALL':
             _next = int(item)
 
     if asset == 'ALL' :
